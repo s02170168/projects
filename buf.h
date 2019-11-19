@@ -10,7 +10,8 @@ typedef enum state{
     GOT_SPACE,
     GOT_SHARP,
     GOT_QUOTE,
-    GOT_BACKSLASH
+    GOT_BACK_SIMPLE,
+    GOT_BACK_QUOTE
 } state;
 
 struct buf{

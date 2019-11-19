@@ -50,7 +50,8 @@ err_type ls_add(list words, string word, word_type type){
 void ls_print(list words){
     for (int i = 0; i < words->count; ++i) {
         if(words->words[i] != NULL){
-            printf("%s\n", words->words[i]);
+            printf("%s    ", words->words[i]);
+            printf((words->types[i] == simple) ? ("simple\n") : ("special\n"));
         }
     }
 }
