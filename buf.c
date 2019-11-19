@@ -13,18 +13,21 @@ buf buf_make(){
     return temp;
 }
 
-void buf_delete(buf buffer){
+void buf_clear(buf buffer, state st){
     if(buffer != NULL){
-        free(buffer->word);
-        free(buffer);
+        if(buffer->word != NULL){
+            free(buffer->word);
+            buffer->word = NULL;
+        }
+        buffer->length = 0;
+        buffer->st = st;
     }
 }
 
-void buf_clear(buf buffer, state st){
+void buf_delete(buf buffer){
     if(buffer != NULL){
-        free(buffer->word);
-        buffer->st = st;
-        buffer->length = 0;
+        buf_clear(buffer, GOT_SPACE);
+        free(buffer);
     }
 }
 

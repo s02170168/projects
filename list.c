@@ -1,5 +1,8 @@
 #include <stdio.h>
 #include <malloc.h>
+#include <string.h>
+#include <stdlib.h>
+#include <unistd.h>
 
 #include "list.h"
 
@@ -47,11 +50,81 @@ err_type ls_add(list words, string word, word_type type){
     return no_err;
 }
 
-void ls_print(list words){
+void ls_upgrade(list words){
     for (int i = 0; i < words->count; ++i) {
-        if(words->words[i] != NULL){
-            printf("%s    ", words->words[i]);
-            printf((words->types[i] == simple) ? ("simple\n") : ("special\n"));
+
+        if(strcmp(words->words[i], "$HOME") == 0){
+            free(words->words[i]);
+            string temp = getenv("HOME");
+
+            int len = 0;
+            while (temp[len] != 0){
+                ++len;
+            }
+
+            words->words[i] = (string) malloc((len + 1) * sizeof(*temp));
+            for (int j = 0; j < len; ++j) {
+                words->words[i][j] = temp[j];
+            }
+            words->words[i][len] = 0;
+
+        } else if(strcmp(words->words[i], "$USER") == 0){
+            free(words->words[i]);
+            string temp = getenv("USER");
+
+            int len = 0;
+            while (temp[len] != 0){
+                ++len;
+            }
+
+            words->words[i] = (string) malloc((len + 1) * sizeof(*temp));
+            for (int j = 0; j < len; ++j) {
+                words->words[i][j] = temp[j];
+            }
+            words->words[i][len] = 0;
+
+        } else if(strcmp(words->words[i], "$SHELL") == 0){
+            free(words->words[i]);
+            string temp = getenv("SHELL");
+
+            int len = 0;
+            while (temp[len] != 0){
+                ++len;
+            }
+
+            words->words[i] = (string) malloc((len + 1) * sizeof(*temp));
+            for (int j = 0; j < len; ++j) {
+                words->words[i][j] = temp[j];
+            }
+            words->words[i][len] = 0;
+
+        } else if(strcmp(words->words[i], "$EUID") == 0){
+            int temp = geteuid();
+            int euid = temp;
+            int len = 0;
+            while (temp){
+                temp /= 10;
+                ++len;
+            }
+
+            free(words->words[i]);
+            words->words[i] = (string) malloc((len + 1) * sizeof(*words->words[i]));
+            for (int j = 0; j < len; ++j) {
+                int cnt = 1;
+                for (int k = 0; k < len - j - 1; ++k) {
+                    cnt *= 10;
+                }
+                words->words[i][j] = (char) ((euid / cnt) % 10 + '0');
+            }
+            words->words[i][len] = 0;
+        }
+    }
+}
+
+void ls_print(list words) {
+    for (int i = 0; i < words->count; ++i) {
+        if (words->words[i] != NULL) {
+            printf("%s\n", words->words[i]);
         }
     }
 }

@@ -23,6 +23,8 @@ err_type ls_add(list, string, word_type);
 
 void ls_print(list);
 
+void ls_upgrade(list);
+
 void ls_clear(list);
 
 void ls_delete(list);

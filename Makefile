@@ -20,4 +20,3 @@ error.o: error.c
 
 clean:
 	rm -rf *.o my_shell
-
