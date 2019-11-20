@@ -8,9 +8,7 @@
 jmp_buf begin;
 
 void invite(void){
-    printf("%s", "\033[22;34m");
-    printf("==> ");
-    printf("%s", "\033[0m");
+    printf("%s==> %s", "\033[22;34m", "\033[0m");
 }
 
 int main(int argc, char **argv) {
