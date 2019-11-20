@@ -48,7 +48,8 @@ int main(int argc, char **argv) {
         if(c_prev == '\n'){
             //Этап разбиения на команды
             ls_upgrade(words);
-
+            ls_print(words);
+            ls_clear(words);
 
 
             //Возврат к лексическому этапу
