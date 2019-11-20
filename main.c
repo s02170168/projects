@@ -12,10 +12,12 @@ jmp_buf begin;
 const char invitation[] = "==> " ;
 
 int main(int argc, char **argv) {
+
     if(argc > 1){
 
         return 0;
     }
+
     setjmp(begin);
     buf buffer = buf_make();
     list words = ls_make();
@@ -44,9 +46,10 @@ int main(int argc, char **argv) {
 
         c_prev = c;
         if(c_prev == '\n'){
+            //Этап разбиения на команды
             ls_upgrade(words);
-            ls_print(words);
-            ls_clear(words);
+
+
 
             //Возврат к лексическому этапу
             printf(invitation);
