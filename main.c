@@ -1,23 +1,19 @@
 #include <stdio.h>
 #include <setjmp.h>
-#include <unistd.h>
-#include <sys/wait.h>
-#include <sys/stat.h>
 
 #include "buf.h"
 #include "list.h"
 #include "error.h"
 
 jmp_buf begin;
-const char invitation[] = "==> " ;
+
+void invite(void){
+    printf("%s", "\033[22;34m");
+    printf("==> ");
+    printf("%s", "\033[0m");
+}
 
 int main(int argc, char **argv) {
-
-    if(argc > 1){
-
-        return 0;
-    }
-
     setjmp(begin);
     buf buffer = buf_make();
     list words = ls_make();
@@ -29,7 +25,7 @@ int main(int argc, char **argv) {
     char c;
     char c_prev = '\n';
 
-    printf(invitation);
+    invite();
     while ( (c = (char) getchar()) != EOF){
         sym_got = 1;
         err = buf_get_sym(buffer, words, c, err);
@@ -53,7 +49,7 @@ int main(int argc, char **argv) {
 
 
             //Возврат к лексическому этапу
-            printf(invitation);
+            invite();
             sym_got = 0;
         }
     }
