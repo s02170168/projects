@@ -7,6 +7,9 @@
 
 list ls_make(){
     list temp = (list) malloc(sizeof(*temp));
+    if(temp == NULL){
+        return NULL;
+    }
     temp->words = NULL;
     temp->types = NULL;
     temp->count = 0;

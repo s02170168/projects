@@ -7,6 +7,9 @@
 
 buf buf_make(){
     buf temp = (buf) malloc(sizeof(*temp));
+    if(temp == NULL){
+        return NULL;
+    }
     temp->word = NULL;
     temp->length = 0;
     temp->st = GOT_SPACE;
