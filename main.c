@@ -6,6 +6,10 @@
 #include "error.h"
 #include "cmd.h"
 
+#define N_OPEN 1
+#define N_FORK 2
+#define N_EXEC 3
+
 jmp_buf begin;
 buf buffer = NULL;
 list words = NULL;
@@ -13,6 +17,7 @@ cmd commands = NULL;
 
 void invite(void);
 void check_status(err_type);
+void shell_msg(int, const char *);
 
 int main(int argc, char **argv) {
 
@@ -49,12 +54,11 @@ int main(int argc, char **argv) {
             ls_upgrade(words);
 
             //Этап разбиения на команды
+            ls_print(words);
             check_status(err = cmd_fill(words, commands));
             ls_clear(words);
             print_structure(commands);
-
             //Запуск программ
-
 
 
             cmd_clear(commands);
@@ -92,6 +96,7 @@ int main(int argc, char **argv) {
                 break;
         }
     }
+    ls_print(words);
 
     /////////////////////////////////////////////////////
 
@@ -117,5 +122,21 @@ void check_status(err_type err){
             cmd_delete(commands);
 
             longjmp(begin, 1);
+    }
+}
+
+void shell_msg(int msg_type, const char *msg){
+    switch (msg_type){
+        case N_OPEN:
+            printf("%sCan't open file %s%s\n", "\033[22;33m", msg, "\033[0m");
+            break;
+        case N_FORK:
+            printf("%sCan't make new process%s\n", "\033[22;33m", "\033[0m");
+            break;
+        case N_EXEC:
+            printf("%sCan't execute %s%s\n", "\033[22;33m", msg, "\033[0m");
+            break;
+        default:
+            break;
     }
 }

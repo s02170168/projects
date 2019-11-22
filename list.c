@@ -123,7 +123,20 @@ void ls_upgrade(list words){
     }
 }
 
+int ls_null(list words){
+    if(words == NULL) { return 0; }
+    int cnt = 0;
+    for (int i = 0; i < words->count; ++i) {
+        if(words->words[i] == NULL) { ++cnt; }
+    }
+
+    return cnt;
+}
+
 void ls_print(list words) {
+    int cnt = words->count - ls_null(words);
+    if(!cnt) { return; }
+    printf("%d\n", cnt);
     for (int i = 0; i < words->count; ++i) {
         if (words->words[i] != NULL) {
             printf("%s\n", words->words[i]);

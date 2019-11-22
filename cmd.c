@@ -75,7 +75,7 @@ err_type cmd_fill(list words, cmd commands){
                     break;
                 case next:
                     temp[cur].next_type = 0;
-                    if(i == words_cnt - 1 || (words->types[i + 1] == special &&
+                    if(i < words_cnt - 1 && (words->types[i + 1] == special &&
                         cmd_get_type(words->words[i + 1]) != open_bracket)) { return syntax; }
                     break;
                 case next_pipe:
@@ -96,7 +96,7 @@ err_type cmd_fill(list words, cmd commands){
                 case background:
                     temp[cur].next_type = 0;
                     temp[cur].background = 1;
-                    if(i == words_cnt - 1 || (words->types[i + 1] == special &&
+                    if(i < words_cnt - 1 && (words->types[i + 1] == special &&
                         cmd_get_type(words->words[i + 1]) != open_bracket)) { return syntax; }
                     break;
                 case file_in:
@@ -112,7 +112,7 @@ err_type cmd_fill(list words, cmd commands){
                     break;
                 case file_out_end:
                     if(i == words_cnt - 1 || words->types[i + 1] == special) { return syntax; }
-                    temp[cur].out_type = 1;
+                    temp[cur].out_type = 2;
                     temp[cur].file_out = words->words[i + 1];
                     words->words[++i] = NULL;
                     break;
