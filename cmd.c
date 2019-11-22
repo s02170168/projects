@@ -264,7 +264,7 @@ void print_structure(cmd commands){
 
     printf("%s------------%s\n", "\033[22;34m", "\033[0m");
     for (int i = 0; i < cnt; ++i) {
-        printf("Argument vector: ");
+        printf("%sArgument vector: %s", "\033[22;35m", "\033[0m");
         if(temp[i].argv != NULL){
             for (int j = 0; temp[i].argv[j] != NULL; ++j) {
                 printf("%s ", temp[i].argv[j]);
@@ -273,21 +273,21 @@ void print_structure(cmd commands){
         } else{
             printf("null\n");
         }
-        printf("Input file: ");
+        printf("%sInput file: %s", "\033[22;35m", "\033[0m");
         if(temp[i].file_in != NULL){
             printf("%s\n", temp[i].file_in);
         } else{
             printf("stdin\n");
         }
-        printf("Output type: %d\n", temp[i].out_type);
-        printf("Output file: ");
+        printf("%sOutput type: %s%d\n", "\033[22;35m", "\033[0m", temp[i].out_type);
+        printf("%sOutput file: %s", "\033[22;35m", "\033[0m");
         if(temp[i].file_out != NULL){
             printf("%s\n", temp[i].file_out);
         } else{
             printf("stdout\n");
         }
-        printf("Background: %d\n", temp[i].background);
-        printf("Sub_shell: ");
+        printf("%sBackground: %s%d\n", "\033[22;35m", "\033[0m", temp[i].background);
+        printf("%sSub_shell: %s", "\033[22;35m", "\033[0m");
         if(temp[i].sub_shell != NULL){
             for (int j = 0; temp[i].sub_shell[j] != NULL; ++j) {
                 printf("%s ", temp[i].sub_shell[j]);
@@ -296,7 +296,7 @@ void print_structure(cmd commands){
         } else{
             printf("null\n");
         }
-        printf("Next type: %d\n", temp[i].next_type);
+        printf("%sNext type: %s%d\n", "\033[22;35m", "\033[0m", temp[i].next_type);
         printf("%s------------%s\n", "\033[22;34m", "\033[0m");
     }
 }
