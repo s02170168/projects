@@ -10,6 +10,7 @@ enum {
     SHARP = 5,
     QUOTE = 6,
     BACKSLASH = 7,
+    SPECIAL_COUNT = 7
 };
 
 int sym_type(char);

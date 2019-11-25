@@ -1,13 +1,11 @@
-#include <malloc.h>
-
+#include "myShellHeaders.h"
 #include "buf.h"
 #include "list.h"
 #include "symbols.h"
-#include "error.h"
 
-buf buf_make(){
+buf buf_make() {
     buf temp = (buf) malloc(sizeof(*temp));
-    if(temp == NULL){
+    if (temp == NULL) {
         return NULL;
     }
     temp->word = NULL;
@@ -16,9 +14,9 @@ buf buf_make(){
     return temp;
 }
 
-void buf_clear(buf buffer, state st){
-    if(buffer != NULL){
-        if(buffer->word != NULL){
+void buf_clear(buf buffer, state st) {
+    if (buffer != NULL) {
+        if (buffer->word != NULL) {
             free(buffer->word);
             buffer->word = NULL;
         }
@@ -27,26 +25,26 @@ void buf_clear(buf buffer, state st){
     }
 }
 
-void buf_delete(buf buffer){
-    if(buffer != NULL){
+void buf_delete(buf buffer) {
+    if (buffer != NULL) {
         buf_clear(buffer, GOT_SPACE);
         free(buffer);
     }
 }
 
-err_type buf_add_sym(buf buffer, char c, state st){
+err_type buf_addSym(buf buffer, char c, state st) {
     int length = buffer->length;
     string w_ptr = buffer->word;
 
-    if(length){
+    if (length) {
         w_ptr = (string) realloc(w_ptr, (length + 1) * sizeof(c));
-    } else{
+    } else {
         w_ptr = (string) malloc(sizeof(c));
     }
 
-    if(w_ptr == NULL){
+    if (w_ptr == NULL) {
         return allocation;
-    } else{
+    } else {
         buffer->word = w_ptr;
     }
 
@@ -56,17 +54,17 @@ err_type buf_add_sym(buf buffer, char c, state st){
     return no_err;
 }
 
-err_type buf_add_word(buf buffer, list words, word_type type){
-    if(!buffer->length){
+err_type buf_addToList(buf buffer, list words, word_type type) {
+    if (!buffer->length) {
         buffer->st = GOT_SPACE;
         return no_err;
     }
-    err_type res = buf_add_sym(buffer, 0, GOT_SPACE);
-    if(res != no_err){
+    err_type res = buf_addSym(buffer, 0, GOT_SPACE);
+    if (res != no_err) {
         return res;
     }
     res = ls_add(words, buffer->word, type);
-    if(res != no_err){
+    if (res != no_err) {
         return res;
     }
     buffer->word = NULL;
@@ -74,86 +72,87 @@ err_type buf_add_word(buf buffer, list words, word_type type){
     return no_err;
 }
 
-err_type buf_get_sym(buf buffer, list words, char c, err_type err){
+err_type buf_getSym(buf buffer, list words, char c, err_type err) {
     err_type res = err;
     state st = buffer->st;
 
-    if(err == wait_syntax){
-        if(c == '\n'){
+    if (err == wait_syntax) {
+        if (c == '\n') {
             buf_clear(buffer, GOT_SPACE);
             return syntax;
         }
-    } else switch (sym_type(c)){
+    } else
+        switch (sym_type(c)) {
             case SIMPLE:
-                switch (st){
+                switch (st) {
                     case GOT_SPECIAL:
-                        res = buf_add_word(buffer, words, special);
-                        if(res != no_err){
+                        res = buf_addToList(buffer, words, special);
+                        if (res != no_err) {
                             return res;
                         }
-                        res = buf_add_sym(buffer, c, GOT_SIMPLE);
+                        res = buf_addSym(buffer, c, GOT_SIMPLE);
                         break;
                     case GOT_QUOTE:
                     case GOT_BACK_QUOTE:
-                        res = buf_add_sym(buffer, c, GOT_QUOTE);
+                        res = buf_addSym(buffer, c, GOT_QUOTE);
                         break;
                     case GOT_SHARP:
                         break;
                     default:
-                        res = buf_add_sym(buffer, c, GOT_SIMPLE);
+                        res = buf_addSym(buffer, c, GOT_SIMPLE);
                         break;
                 }
                 break;
 
             case SPECIAL:
-                switch (st){
+                switch (st) {
                     case GOT_SIMPLE:
-                        res = buf_add_word(buffer, words, simple);
-                        if(res != no_err){
+                        res = buf_addToList(buffer, words, simple);
+                        if (res != no_err) {
                             return res;
                         }
-                        res = buf_add_sym(buffer, c, GOT_SPECIAL);
+                        res = buf_addSym(buffer, c, GOT_SPECIAL);
                         break;
                     case GOT_SPACE:
-                        res = buf_add_sym(buffer, c, GOT_SPECIAL);
+                        res = buf_addSym(buffer, c, GOT_SPECIAL);
                         break;
                     case GOT_SHARP:
                         break;
                     case GOT_SPECIAL:
-                        if(sym_dup(c, buffer->word[0])){
-                            res = buf_add_sym(buffer, c, GOT_SPECIAL);
-                            if(res != no_err){
+                        if (sym_dup(c, buffer->word[0])) {
+                            res = buf_addSym(buffer, c, GOT_SPECIAL);
+                            if (res != no_err) {
                                 return res;
                             }
-                            res = buf_add_word(buffer, words, special);
-                        } else{
-                            res = buf_add_word(buffer, words, special);
-                            if(res != no_err){
+                            res = buf_addToList(buffer, words, special);
+                        } else {
+                            res = buf_addToList(buffer, words, special);
+                            if (res != no_err) {
                                 return res;
                             }
-                            res = buf_add_sym(buffer, c, GOT_SPECIAL);
+                            res = buf_addSym(buffer, c, GOT_SPECIAL);
                         }
                         break;
                     case GOT_BACK_SIMPLE:
-                        res = buf_add_sym(buffer, c, GOT_SIMPLE);
+                        res = buf_addSym(buffer, c, GOT_SIMPLE);
                         break;
                     case GOT_BACK_QUOTE:
                     case GOT_QUOTE:
                     default:
-                        res = buf_add_sym(buffer, c, GOT_QUOTE);
+                        res = buf_addSym(buffer, c, GOT_QUOTE);
                         break;
                 }
                 break;
 
             case SPACE:
-                switch (st){
+                switch (st) {
                     case GOT_QUOTE:
                     case GOT_BACK_QUOTE:
-                        res = buf_add_sym(buffer, c, GOT_QUOTE);
+                        res = buf_addSym(buffer, c, GOT_QUOTE);
                         break;
                     case GOT_BACK_SIMPLE:
                     case GOT_SIMPLE:
-                        res = buf_add_word(buffer, words, simple);
+                        res = buf_addToList(buffer, words, simple);
                         break;
                     default:
                         break;
@@ -161,17 +160,17 @@ err_type buf_get_sym(buf buffer, list words, char c, err_type err){
                 break;
 
             case NEWLINE:
-                switch (st){
+                switch (st) {
                     case GOT_SIMPLE:
                     case GOT_BACK_SIMPLE:
-                        res = buf_add_word(buffer, words, simple);
+                        res = buf_addToList(buffer, words, simple);
                         break;
                     case GOT_QUOTE:
                     case GOT_BACK_QUOTE:
                         res = syntax;
                         break;
                     case GOT_SPECIAL:
-                        res = buf_add_word(buffer, words, special);
+                        res = buf_addToList(buffer, words, special);
                         break;
                     default:
                         buffer->st = GOT_SPACE;
@@ -180,13 +179,13 @@ err_type buf_get_sym(buf buffer, list words, char c, err_type err){
                 break;
 
             case SHARP:
-                switch (st){
+                switch (st) {
                     case GOT_QUOTE:
                     case GOT_BACK_QUOTE:
-                        res = buf_add_sym(buffer, c, GOT_QUOTE);
+                        res = buf_addSym(buffer, c, GOT_QUOTE);
                         break;
                     case GOT_BACK_SIMPLE:
-                        res = buf_add_sym(buffer, c, GOT_SIMPLE);
+                        res = buf_addSym(buffer, c, GOT_SIMPLE);
                         break;
                     case GOT_SHARP:
                         break;
@@ -194,31 +193,31 @@ err_type buf_get_sym(buf buffer, list words, char c, err_type err){
                         buffer->st = GOT_SHARP;
                         break;
                     case GOT_SPECIAL:
-                        res = buf_add_word(buffer, words, special);
+                        res = buf_addToList(buffer, words, special);
                         buffer->st = GOT_SHARP;
                         break;
                     case GOT_SIMPLE:
                     default:
-                        res = buf_add_word(buffer, words, simple);
+                        res = buf_addToList(buffer, words, simple);
                         buffer->st = GOT_SHARP;
                         break;
                 }
                 break;
 
             case QUOTE:
-                switch (st){
+                switch (st) {
                     case GOT_BACK_QUOTE:
-                        res = buf_add_sym(buffer, c, GOT_QUOTE);
+                        res = buf_addSym(buffer, c, GOT_QUOTE);
                         break;
                     case GOT_QUOTE:
                         buffer->st = GOT_SIMPLE;
                         break;
                     case GOT_SPECIAL:
-                        res = buf_add_word(buffer, words, special);
+                        res = buf_addToList(buffer, words, special);
                         buffer->st = GOT_QUOTE;
                         break;
                     case GOT_BACK_SIMPLE:
-                        res = buf_add_sym(buffer, c, GOT_SIMPLE);
+                        res = buf_addSym(buffer, c, GOT_SIMPLE);
                         break;
                     case GOT_SHARP:
                         break;
@@ -229,12 +228,12 @@ err_type buf_get_sym(buf buffer, list words, char c, err_type err){
                 break;
 
             case BACKSLASH:
-                switch (st){
+                switch (st) {
                     case GOT_BACK_SIMPLE:
-                        res = buf_add_sym(buffer, c, GOT_SIMPLE);
+                        res = buf_addSym(buffer, c, GOT_SIMPLE);
                         break;
                     case GOT_SPECIAL:
-                        res = buf_add_word(buffer, words, special);
+                        res = buf_addToList(buffer, words, special);
                         buffer->st = GOT_BACK_SIMPLE;
                         break;
                     case GOT_SHARP:
@@ -243,7 +242,7 @@ err_type buf_get_sym(buf buffer, list words, char c, err_type err){
                         buffer->st = GOT_BACK_SIMPLE;
                         break;
                     case GOT_BACK_QUOTE:
-                        res = buf_add_sym(buffer, c, GOT_QUOTE);
+                        res = buf_addSym(buffer, c, GOT_QUOTE);
                         break;
                     case GOT_QUOTE:
                         buffer->st = GOT_BACK_QUOTE;
@@ -255,13 +254,13 @@ err_type buf_get_sym(buf buffer, list words, char c, err_type err){
                 break;
 
             case INCORRECT:
-                switch (st){
+                switch (st) {
                     case GOT_QUOTE:
                     case GOT_BACK_QUOTE:
-                        res = buf_add_sym(buffer, c, GOT_QUOTE);
+                        res = buf_addSym(buffer, c, GOT_QUOTE);
                         break;
                     case GOT_BACK_SIMPLE:
-                        res = buf_add_sym(buffer, c, GOT_SIMPLE);
+                        res = buf_addSym(buffer, c, GOT_SIMPLE);
                         break;
                     case GOT_SHARP:
                         break;
@@ -270,7 +269,7 @@ err_type buf_get_sym(buf buffer, list words, char c, err_type err){
                         break;
                 }
                 break;
-    }
+        }
 
     return res;
 }

@@ -1,13 +1,9 @@
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <unistd.h>
-
+#include "myShellHeaders.h"
 #include "list.h"
 
-list ls_make(){
+list ls_make() {
     list temp = (list) malloc(sizeof(*temp));
-    if(temp == NULL){
+    if (temp == NULL) {
         return NULL;
     }
     temp->words = NULL;
@@ -16,33 +12,33 @@ list ls_make(){
     return temp;
 }
 
-err_type ls_add(list words, string word, word_type type){
+err_type ls_add(list words, string word, word_type type) {
     err_type res = no_err;
 
     int cnt = words->count;
     string *w_ptr = words->words;
     word_type *t_prt = words->types;
-    if(cnt){
+    if (cnt) {
         w_ptr = (string *) realloc(w_ptr, (cnt + 1) * sizeof(word));
         t_prt = (word_type *) realloc(t_prt, (cnt + 1) * sizeof(type));
-    } else{
+    } else {
         w_ptr = (string *) malloc(sizeof(word));
         t_prt = (word_type *) malloc(sizeof(type));
     }
 
-    if(w_ptr == NULL){
+    if (w_ptr == NULL) {
         res = allocation;
-    } else{
+    } else {
         words->words = w_ptr;
     }
 
-    if(t_prt == NULL){
+    if (t_prt == NULL) {
         res = allocation;
-    } else{
+    } else {
         words->types = t_prt;
     }
 
-    if(res != no_err){
+    if (res != no_err) {
         return res;
     }
 
@@ -52,15 +48,15 @@ err_type ls_add(list words, string word, word_type type){
     return no_err;
 }
 
-void ls_upgrade(list words){
+void ls_replacePathVars(list words) {
     for (int i = 0; i < words->count; ++i) {
 
-        if(strcmp(words->words[i], "$HOME") == 0){
+        if (strcmp(words->words[i], "$HOME") == 0) {
             free(words->words[i]);
             string temp = getenv("HOME");
 
             int len = 0;
-            while (temp[len] != 0){
+            while (temp[len] != 0) {
                 ++len;
             }
 
@@ -70,12 +66,12 @@ void ls_upgrade(list words){
             }
             words->words[i][len] = 0;
 
-        } else if(strcmp(words->words[i], "$USER") == 0){
+        } else if (strcmp(words->words[i], "$USER") == 0) {
             free(words->words[i]);
             string temp = getenv("USER");
 
             int len = 0;
-            while (temp[len] != 0){
+            while (temp[len] != 0) {
                 ++len;
             }
 
@@ -85,12 +81,12 @@ void ls_upgrade(list words){
             }
             words->words[i][len] = 0;
 
-        } else if(strcmp(words->words[i], "$SHELL") == 0){
+        } else if (strcmp(words->words[i], "$SHELL") == 0) {
             free(words->words[i]);
             string temp = getenv("SHELL");
 
             int len = 0;
-            while (temp[len] != 0){
+            while (temp[len] != 0) {
                 ++len;
             }
 
@@ -100,11 +96,11 @@ void ls_upgrade(list words){
             }
             words->words[i][len] = 0;
 
-        } else if(strcmp(words->words[i], "$EUID") == 0){
+        } else if (strcmp(words->words[i], "$EUID") == 0) {
             int temp = geteuid();
             int euid = temp;
             int len = 0;
-            while (temp){
+            while (temp) {
                 temp /= 10;
                 ++len;
             }
@@ -123,11 +119,11 @@ void ls_upgrade(list words){
     }
 }
 
-int ls_null(list words){
-    if(words == NULL) { return 0; }
+int ls_null(list words) {
+    if (words == NULL) { return 0; }
     int cnt = 0;
     for (int i = 0; i < words->count; ++i) {
-        if(words->words[i] == NULL) { ++cnt; }
+        if (words->words[i] == NULL) { ++cnt; }
     }
 
     return cnt;
@@ -135,7 +131,7 @@ int ls_null(list words){
 
 void ls_print(list words) {
     int cnt = words->count - ls_null(words);
-    if(!cnt) { return; }
+    if (!cnt) { return; }
     printf("%d\n", cnt);
     for (int i = 0; i < words->count; ++i) {
         if (words->words[i] != NULL) {
@@ -144,8 +140,8 @@ void ls_print(list words) {
     }
 }
 
-void ls_clear(list words){
-    if(words != NULL){
+void ls_clear(list words) {
+    if (words != NULL) {
         for (int i = 0; i < words->count; ++i) {
             free(words->words[i]);
         }
@@ -157,7 +153,59 @@ void ls_clear(list words){
     }
 }
 
-void ls_delete(list words){
+void ls_delete(list words) {
     ls_clear(words);
     free(words);
+}
+
+err_type ls_argvToWords(list words, char **argv){
+    if(words == NULL) { return allocation; }
+
+    err_type res = no_err;
+    int count = 0;
+    for (int i = 1; argv[i] != NULL; ++i, ++count);
+
+    string *w_ptr = words->words;
+    word_type *t_ptr = words->types;
+
+    w_ptr = (string *) realloc(w_ptr, count * sizeof(*w_ptr));
+    t_ptr = (word_type *) realloc(t_ptr, count * sizeof(t_ptr));
+    if(w_ptr == NULL){
+        res = allocation;
+        if(t_ptr != NULL){
+            free(t_ptr);
+        }
+    } else{
+        words->words = w_ptr;
+    }
+
+    if(t_ptr == NULL){
+        res = allocation;
+    } else{
+        words->types = t_ptr;
+    }
+
+    if(res != no_err) { return res; }
+
+    words->count = count;
+    for (int i = 0; i < count; ++i) {
+        string temp = argv[i + 1];
+        words->words[i] = (string) malloc((strlen(temp) + 1) * sizeof(*temp));
+        if(words->words[i] == NULL){
+            res = allocation;
+            continue;
+        }
+        strcpy(words->words[i], temp);
+        if(!strcmp(temp, "(") || !strcmp(temp, ";") ||
+        !strcmp(temp, ")") || !strcmp(temp, ">>") ||
+        !strcmp(temp, ">") || !strcmp(temp, "<") ||
+        !strcmp(temp, "&&") || !strcmp(temp, "&") ||
+        !strcmp(temp, "||") || !strcmp(temp, "|")){
+            words->types[i] = special;
+        } else{
+            words->types[i] = simple;
+        }
+
+    }
+    return res;
 }

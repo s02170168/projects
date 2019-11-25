@@ -1,32 +1,47 @@
-#include <stdio.h>
-#include <setjmp.h>
-
+#include "myShellHeaders.h"
 #include "buf.h"
 #include "list.h"
-#include "error.h"
 #include "cmd.h"
 
-#define N_OPEN 1
-#define N_FORK 2
-#define N_EXEC 3
-
-jmp_buf begin;
 buf buffer = NULL;
 list words = NULL;
 cmd commands = NULL;
+prStack *processes = NULL;
 
 void invite(void);
-void check_status(err_type);
-void shell_msg(int, const char *);
 
+void checkAndContinue(err_type);
+
+void checkAndExit(err_type);
+
+void sigHandler(int);
+
+jmp_buf begin;
 int main(int argc, char **argv) {
+    signal(SIGINT, sigHandler);
 
+    /* Программа с аргументами */
+    if(argc - 1){
+        words = ls_make();
+        checkAndExit(ls_argvToWords(words, argv));
+        commands = cmd_make();
+        checkAndExit(cmd_fill(words, commands));
+        int status = 0;
+        cmd_shellExec(commands, &processes, &status);
+
+        ls_delete(words);
+        cmd_delete(commands);
+        while (processes) { processes = cmd_prCheck(processes); }
+        exit(status);
+    }
+
+    /* Программа без аргументов */
     setjmp(begin);
-
     buffer = buf_make();
     words = ls_make();
     commands = cmd_make();
-    if(buffer == NULL || words == NULL || commands == NULL){
+
+    if (buffer == NULL || words == NULL || commands == NULL) {
         err_msg(allocation);
         buf_delete(buffer);
         ls_delete(words);
@@ -34,84 +49,64 @@ int main(int argc, char **argv) {
         return 0;
     }
 
-    /////////////////////////////////////////////////////
-
     err_type err = no_err;
     char c;
     char c_prev = '\n';
     int sym_got = 0;
 
-    /////////////////////////////////////////////////////
-
     invite();
-    while ( (c = (char) getchar()) != EOF){
+    while ((c = (char) getchar()) != EOF) {
         sym_got = 1;
-        check_status(err = buf_get_sym(buffer, words, c, err));
+        checkAndContinue(err = buf_getSym(buffer, words, c, err));
 
         c_prev = c;
 
-        if(c_prev == '\n'){
-            ls_upgrade(words);
+        if (c_prev == '\n') {
+            ls_replacePathVars(words);
 
             //Этап разбиения на команды
-            ls_print(words);
-            check_status(err = cmd_fill(words, commands));
-            ls_clear(words);
-            print_structure(commands);
+            checkAndContinue(cmd_fill(words, commands));
             //Запуск программ
+            int status = 0;
+            if(cmd_shellExec(commands, &processes, &status)){
+                buf_delete(buffer);
+                ls_delete(words);
+                cmd_delete(commands);
+                cmd_prKill(processes);
+                exit(status);
+            }
+            processes = cmd_prCheck(processes);
 
-
-            cmd_clear(commands);
+            //Переход к следующей строке
             invite();
             sym_got = 0;
         }
     }
 
-    /////////////////////////not edited/////////////////////
 
-    if((c == EOF && c_prev != '\n') || !sym_got){
-        putchar('\n');
-    }
+    if ((c == EOF && c_prev != '\n') || !sym_got) { putchar('\n'); }
 
-    if(err == wait_syntax) {
-        err_msg(syntax);
-        ls_delete(words);
-        buf_delete(buffer);
-        cmd_delete(commands);
-        return 0;
-    }
+    checkAndExit(buf_getSym(buffer, words, '\n', err));
+    checkAndExit(cmd_fill(words, commands));
+    int status = 0;
+    cmd_shellExec(commands, &processes, &status);
 
-    if(buffer->length){
-        err = buf_get_sym(buffer, words, '\n', err);
-        switch (err){
-            case syntax:
-            case allocation:
-                err_msg(err);
-                ls_delete(words);
-                buf_delete(buffer);
-                cmd_delete(commands);
-                return 0;
-            case no_err:
-            default:
-                break;
-        }
-    }
-    ls_print(words);
-
-    /////////////////////////////////////////////////////
 
     buf_delete(buffer);
     ls_delete(words);
     cmd_delete(commands);
-    return 0;
+    while (processes) { processes = cmd_prCheck(processes); }
+    exit(status);
 }
 
-void invite(){
-    printf("%s==> %s", "\033[22;34m", "\033[0m");
+void invite() {
+    char hostName[PATH_MAX];
+    gethostname(hostName, PATH_MAX);
+    printf("%s%s@%s%s==> %s", "\033[01;36m", getenv("USER"), hostName, "\033[22;34m", "\033[0m");
 }
 
-void check_status(err_type err){
-    switch (err){
+void checkAndContinue(err_type err) {
+    switch (err) {
         case no_err:
         case wait_syntax:
             break;
@@ -125,18 +120,26 @@ void check_status(err_type err){
     }
 }
 
-void shell_msg(int msg_type, const char *msg){
-    switch (msg_type){
-        case N_OPEN:
-            printf("%sCan't open file %s%s\n", "\033[22;33m", msg, "\033[0m");
-            break;
-        case N_FORK:
-            printf("%sCan't make new process%s\n", "\033[22;33m", "\033[0m");
-            break;
-        case N_EXEC:
-            printf("%sCan't execute %s%s\n", "\033[22;33m", msg, "\033[0m");
-            break;
+void checkAndExit(err_type err){
+    switch (err) {
+        case no_err:
+            return;
+        case wait_syntax:
+            err_msg(syntax);
         default:
-            break;
+            err_msg(err);
     }
+    ls_delete(words);
+    buf_delete(buffer);
+    cmd_delete(commands);
+    cmd_prKill(processes);
+    exit(0);
+}
+
+void sigHandler(int signal){
+    buf_delete(buffer);
+    ls_delete(words);
+    cmd_delete(commands);
+    cmd_prKill(processes);
+    exit(1);
 }

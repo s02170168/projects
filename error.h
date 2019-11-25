@@ -1,7 +1,7 @@
 #ifndef ERROR_H
 #define ERROR_H
 
-typedef enum error{
+typedef enum error {
     wait_syntax,
     syntax,
     allocation,

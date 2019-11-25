@@ -1,10 +1,11 @@
 #ifndef BUF_H
 #define BUF_H
 
+#include "myShellHeaders.h"
 #include "list.h"
-#include "error.h"
 
-typedef enum state{
+/* Private */
+typedef enum state {
     GOT_SIMPLE,
     GOT_SPECIAL,
     GOT_SPACE,
@@ -14,17 +15,27 @@ typedef enum state{
     GOT_BACK_QUOTE
 } state;
 
-struct buf{
+struct buf {
     string word;
     int length;
     state st;
 };
-typedef struct buf * buf;
+typedef struct buf *buf;
 
+void buf_clear(buf, state);
+
+
+/* Constructor & Destructor */
 buf buf_make(void);
 
-err_type buf_get_sym(buf, list, char, err_type);
-
 void buf_delete(buf);
+
+
+/* Public */
+err_type buf_addSym(buf, char, state);
+
+err_type buf_addToList(buf, list, word_type);
+
+err_type buf_getSym(buf, list, char, err_type);
 
 #endif
