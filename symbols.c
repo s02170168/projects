@@ -7,15 +7,6 @@ const char specials[SPECIAL_COUNT] = {
 };
 
 int sym_type(char c) {
-    if (('a' <= c && c <= 'z') ||
-        ('A' <= c && c <= 'Z') ||
-        ('0' <= c && c <= '9') ||
-        (c == '$') || (c == '/') ||
-        (c == '.') || (c == '_') ||
-        (c == '-') || (c == ',') ||
-        (c == '+') || (c == '=')) {
-        return SIMPLE;
-    }
     if (c == '\t' || c == ' ') {
         return SPACE;
     }
@@ -36,7 +27,7 @@ int sym_type(char c) {
     if (c == '\\') {
         return BACKSLASH;
     }
-    return INCORRECT;
+    return SIMPLE;
 }
 
 int sym_dup(char c1, char c2) {

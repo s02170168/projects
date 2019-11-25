@@ -26,11 +26,11 @@ int cmd_checkBrackets(list words) {
         } else if (strcmp(words->words[i], ")") == 0) {
             --brackets;
             if (brackets < 0) { return -1; }
-            if (brackets == 0){
-                if(i - start < 2) { return -1; }
+            if (brackets == 0) {
+                if (i - start < 2) { return -1; }
 
-                if(i < words->count - 1){
-                    if(words->types[i + 1] == simple || !strcmp(words->words[i + 1], "(")) { return -1; }
+                if (i < words->count - 1) {
+                    if (words->types[i + 1] == simple || !strcmp(words->words[i + 1], "(")) { return -1; }
                 }
             }
         }
@@ -236,7 +236,7 @@ err_type cmd_pushSubShell(cmd commands, list words, int *idx) {
     if (sub_shell == NULL) { return allocation; }
 
     sub_shell[0] = (string) malloc((strlen("./my_shell") + 1) * sizeof(**sub_shell));
-    if(sub_shell[0] == NULL){
+    if (sub_shell[0] == NULL) {
         free(sub_shell);
         return allocation;
     }
@@ -317,9 +317,9 @@ void cmd_shellMessage(int msg_type, const char *msg) {
             printf("%sCan't execute %s%s\n", "\033[22;33m", msg, "\033[0m");
             break;
         case N_CD:
-            if(msg == NULL){
+            if (msg == NULL) {
                 printf("%sToo many arguments for cd%s\n", "\033[22;33m", "\033[0m");
-            } else{
+            } else {
                 printf("%sNo such file or directory: %s%s\n", "\033[22;33m", msg, "\033[0m");
             }
             break;
@@ -331,24 +331,25 @@ void cmd_shellMessage(int msg_type, const char *msg) {
     }
 }
 
-void cmd_prKill(prStack *processes){
-    while (processes != NULL){
+void cmd_prKill(prStack *processes) {
+    while (processes != NULL) {
         kill(processes->pid, SIGKILL);
-        int status; waitpid(processes->pid, &status, WNOWAIT);
+        int status;
+        waitpid(processes->pid, &status, WNOWAIT);
         prStack *temp = processes;
         processes = processes->next;
         free(temp);
     }
 }
 
-prStack *cmd_pushPr(prStack *processes, pid_t pid){
+prStack *cmd_pushPr(prStack *processes, pid_t pid) {
     prStack *temp;
     temp = (prStack *) malloc(sizeof(*temp));
     temp->pid = pid;
     temp->next = processes;
-    if(processes == NULL){
+    if (processes == NULL) {
         temp->number = 1;
-    } else{
+    } else {
         temp->number = processes->number + 1;
     }
     return temp;
@@ -371,8 +372,8 @@ prStack *cmd_prCheck(prStack *processes) {
     }
 }
 
-int cmd_shellExec(cmd commands, prStack **processes, int *exitStatus){
-    if(commands == NULL) { return 0; }
+int cmd_shellExec(cmd commands, prStack **processes, int *exitStatus) {
+    if (commands == NULL) { return 0; }
 
     int status;
     int file_in, file_out;
@@ -385,7 +386,7 @@ int cmd_shellExec(cmd commands, prStack **processes, int *exitStatus){
 
     for (int i = 0; i < commands->commandsCount; ++i) {
         command temp = commands->commands[i];
-        if(nextCondition) {
+        if (nextCondition) {
 
             if (temp.argv != NULL && !strcmp(temp.argv[0], "exit")) {
                 *exitStatus = 0;
@@ -413,31 +414,31 @@ int cmd_shellExec(cmd commands, prStack **processes, int *exitStatus){
                 continue;
             }
 
-            if(temp.next_type == 1){
+            if (temp.next_type == 1) {
                 pipe(fd);
             }
 
             switch (pid = fork()) {
                 case -1:
                     cmd_shellMessage(N_FORK, NULL);
-                    if(temp.next_type == 1){
+                    if (temp.next_type == 1) {
                         close(fd[0]);
                         close(fd[1]);
                     }
-                    if(nextIn) {
+                    if (nextIn) {
                         close(nextIn);
                         nextIn = 0;
                     }
                     continue;
                 case 0:
                     /* Перенаправление потока ввода */
-                    if(nextIn){
+                    if (nextIn) {
                         dup2(nextIn, 0);
                         close(nextIn);
                         nextIn = 0;
                     }
 
-                    if(temp.next_type == 1){
+                    if (temp.next_type == 1) {
                         close(fd[0]);
                         dup2(fd[1], 1);
                         close(fd[1]);
@@ -482,30 +483,30 @@ int cmd_shellExec(cmd commands, prStack **processes, int *exitStatus){
                     }
                     exit(1);
                 default:
-                    if(nextIn){
+                    if (nextIn) {
                         close(nextIn);
                     }
-                    if(temp.next_type == 1){
+                    if (temp.next_type == 1) {
                         close(fd[1]);
                         nextIn = fd[0];
                     }
 
-                    if(temp.next_type == 1){
+                    if (temp.next_type == 1) {
                         conveyor = cmd_pushPr(conveyor, pid);
-                    } else{
+                    } else {
                         nextIn = 0;
-                        if(temp.background){
+                        if (temp.background) {
                             *processes = cmd_pushPr(*processes, pid);
                             prStack *pr_ptr;
-                            while (conveyor != NULL){
+                            while (conveyor != NULL) {
                                 *processes = cmd_pushPr(*processes, conveyor->pid);
                                 pr_ptr = conveyor;
                                 conveyor = conveyor->next;
                                 free(pr_ptr);
                             }
-                        } else{
+                        } else {
                             waitpid(pid, &status, 0);
-                            while (conveyor != NULL){
+                            while (conveyor != NULL) {
                                 conveyor = cmd_prCheck(conveyor);
                             }
                         }
@@ -533,15 +534,15 @@ int cmd_shellExec(cmd commands, prStack **processes, int *exitStatus){
                     }
                     break;
             }
-        } else{
-            if(temp.next_type == 0){
+        } else {
+            if (temp.next_type == 0) {
                 nextCondition = 1;
             }
         }
     }
 
-    if(nextIn) { close(nextIn); }
-    while (conveyor){
+    if (nextIn) { close(nextIn); }
+    while (conveyor) {
         conveyor = cmd_prCheck(conveyor);
     }
 

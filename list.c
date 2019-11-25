@@ -158,8 +158,8 @@ void ls_delete(list words) {
     free(words);
 }
 
-err_type ls_argvToWords(list words, char **argv){
-    if(words == NULL) { return allocation; }
+err_type ls_argvToWords(list words, char **argv) {
+    if (words == NULL) { return allocation; }
 
     err_type res = no_err;
     int count = 0;
@@ -170,39 +170,39 @@ err_type ls_argvToWords(list words, char **argv){
 
     w_ptr = (string *) realloc(w_ptr, count * sizeof(*w_ptr));
     t_ptr = (word_type *) realloc(t_ptr, count * sizeof(t_ptr));
-    if(w_ptr == NULL){
+    if (w_ptr == NULL) {
         res = allocation;
-        if(t_ptr != NULL){
+        if (t_ptr != NULL) {
             free(t_ptr);
         }
-    } else{
+    } else {
         words->words = w_ptr;
     }
 
-    if(t_ptr == NULL){
+    if (t_ptr == NULL) {
         res = allocation;
-    } else{
+    } else {
         words->types = t_ptr;
     }
 
-    if(res != no_err) { return res; }
+    if (res != no_err) { return res; }
 
     words->count = count;
     for (int i = 0; i < count; ++i) {
         string temp = argv[i + 1];
         words->words[i] = (string) malloc((strlen(temp) + 1) * sizeof(*temp));
-        if(words->words[i] == NULL){
+        if (words->words[i] == NULL) {
             res = allocation;
             continue;
         }
         strcpy(words->words[i], temp);
-        if(!strcmp(temp, "(") || !strcmp(temp, ";") ||
-        !strcmp(temp, ")") || !strcmp(temp, ">>") ||
-        !strcmp(temp, ">") || !strcmp(temp, "<") ||
-        !strcmp(temp, "&&") || !strcmp(temp, "&") ||
-        !strcmp(temp, "||") || !strcmp(temp, "|")){
+        if (!strcmp(temp, "(") || !strcmp(temp, ";") ||
+            !strcmp(temp, ")") || !strcmp(temp, ">>") ||
+            !strcmp(temp, ">") || !strcmp(temp, "<") ||
+            !strcmp(temp, "&&") || !strcmp(temp, "&") ||
+            !strcmp(temp, "||") || !strcmp(temp, "|")) {
             words->types[i] = special;
-        } else{
+        } else {
             words->types[i] = simple;
         }
 

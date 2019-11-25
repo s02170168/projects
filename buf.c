@@ -76,200 +76,177 @@ err_type buf_getSym(buf buffer, list words, char c, err_type err) {
     err_type res = err;
     state st = buffer->st;
 
-    if (err == wait_syntax) {
-        if (c == '\n') {
-            buf_clear(buffer, GOT_SPACE);
-            return syntax;
-        }
-    } else
-        switch (sym_type(c)) {
-            case SIMPLE:
-                switch (st) {
-                    case GOT_SPECIAL:
+    switch (sym_type(c)) {
+        case SIMPLE:
+            switch (st) {
+                case GOT_SPECIAL:
+                    res = buf_addToList(buffer, words, special);
+                    if (res != no_err) {
+                        return res;
+                    }
+                    res = buf_addSym(buffer, c, GOT_SIMPLE);
+                    break;
+                case GOT_QUOTE:
+                case GOT_BACK_QUOTE:
+                    res = buf_addSym(buffer, c, GOT_QUOTE);
+                    break;
+                case GOT_SHARP:
+                    break;
+                default:
+                    res = buf_addSym(buffer, c, GOT_SIMPLE);
+                    break;
+            }
+            break;
+
+        case SPECIAL:
+            switch (st) {
+                case GOT_SIMPLE:
+                    res = buf_addToList(buffer, words, simple);
+                    if (res != no_err) {
+                        return res;
+                    }
+                    res = buf_addSym(buffer, c, GOT_SPECIAL);
+                    break;
+                case GOT_SPACE:
+                    res = buf_addSym(buffer, c, GOT_SPECIAL);
+                    break;
+                case GOT_SHARP:
+                    break;
+                case GOT_SPECIAL:
+                    if (sym_dup(c, buffer->word[0])) {
+                        res = buf_addSym(buffer, c, GOT_SPECIAL);
+                        if (res != no_err) {
+                            return res;
+                        }
+                        res = buf_addToList(buffer, words, special);
+                    } else {
                         res = buf_addToList(buffer, words, special);
                         if (res != no_err) {
                             return res;
                         }
-                        res = buf_addSym(buffer, c, GOT_SIMPLE);
-                        break;
-                    case GOT_QUOTE:
-                    case GOT_BACK_QUOTE:
-                        res = buf_addSym(buffer, c, GOT_QUOTE);
-                        break;
-                    case GOT_SHARP:
-                        break;
-                    default:
-                        res = buf_addSym(buffer, c, GOT_SIMPLE);
-                        break;
-                }
-                break;
-
-            case SPECIAL:
-                switch (st) {
-                    case GOT_SIMPLE:
-                        res = buf_addToList(buffer, words, simple);
-                        if (res != no_err) {
-                            return res;
-                        }
                         res = buf_addSym(buffer, c, GOT_SPECIAL);
-                        break;
-                    case GOT_SPACE:
-                        res = buf_addSym(buffer, c, GOT_SPECIAL);
-                        break;
-                    case GOT_SHARP:
-                        break;
-                    case GOT_SPECIAL:
-                        if (sym_dup(c, buffer->word[0])) {
-                            res = buf_addSym(buffer, c, GOT_SPECIAL);
-                            if (res != no_err) {
-                                return res;
-                            }
-                            res = buf_addToList(buffer, words, special);
-                        } else {
-                            res = buf_addToList(buffer, words, special);
-                            if (res != no_err) {
-                                return res;
-                            }
-                            res = buf_addSym(buffer, c, GOT_SPECIAL);
-                        }
-                        break;
-                    case GOT_BACK_SIMPLE:
-                        res = buf_addSym(buffer, c, GOT_SIMPLE);
-                        break;
-                    case GOT_BACK_QUOTE:
-                    case GOT_QUOTE:
-                    default:
-                        res = buf_addSym(buffer, c, GOT_QUOTE);
-                        break;
-                }
-                break;
+                    }
+                    break;
+                case GOT_BACK_SIMPLE:
+                    res = buf_addSym(buffer, c, GOT_SIMPLE);
+                    break;
+                case GOT_BACK_QUOTE:
+                case GOT_QUOTE:
+                default:
+                    res = buf_addSym(buffer, c, GOT_QUOTE);
+                    break;
+            }
+            break;
 
-            case SPACE:
-                switch (st) {
-                    case GOT_QUOTE:
-                    case GOT_BACK_QUOTE:
-                        res = buf_addSym(buffer, c, GOT_QUOTE);
-                        break;
-                    case GOT_BACK_SIMPLE:
-                    case GOT_SIMPLE:
-                        res = buf_addToList(buffer, words, simple);
-                        break;
-                    default:
-                        break;
-                }
-                break;
+        case SPACE:
+            switch (st) {
+                case GOT_QUOTE:
+                case GOT_BACK_QUOTE:
+                    res = buf_addSym(buffer, c, GOT_QUOTE);
+                    break;
+                case GOT_BACK_SIMPLE:
+                case GOT_SIMPLE:
+                    res = buf_addToList(buffer, words, simple);
+                    break;
+                default:
+                    break;
+            }
+            break;
 
-            case NEWLINE:
-                switch (st) {
-                    case GOT_SIMPLE:
-                    case GOT_BACK_SIMPLE:
-                        res = buf_addToList(buffer, words, simple);
-                        break;
-                    case GOT_QUOTE:
-                    case GOT_BACK_QUOTE:
-                        res = syntax;
-                        break;
-                    case GOT_SPECIAL:
-                        res = buf_addToList(buffer, words, special);
-                        break;
-                    default:
-                        buffer->st = GOT_SPACE;
-                        break;
-                }
-                break;
+        case NEWLINE:
+            switch (st) {
+                case GOT_SIMPLE:
+                case GOT_BACK_SIMPLE:
+                    res = buf_addToList(buffer, words, simple);
+                    break;
+                case GOT_QUOTE:
+                case GOT_BACK_QUOTE:
+                    res = syntax;
+                    break;
+                case GOT_SPECIAL:
+                    res = buf_addToList(buffer, words, special);
+                    break;
+                default:
+                    buffer->st = GOT_SPACE;
+                    break;
+            }
+            break;
 
-            case SHARP:
-                switch (st) {
-                    case GOT_QUOTE:
-                    case GOT_BACK_QUOTE:
-                        res = buf_addSym(buffer, c, GOT_QUOTE);
-                        break;
-                    case GOT_BACK_SIMPLE:
-                        res = buf_addSym(buffer, c, GOT_SIMPLE);
-                        break;
-                    case GOT_SHARP:
-                        break;
-                    case GOT_SPACE:
-                        buffer->st = GOT_SHARP;
-                        break;
-                    case GOT_SPECIAL:
-                        res = buf_addToList(buffer, words, special);
-                        buffer->st = GOT_SHARP;
-                        break;
-                    case GOT_SIMPLE:
-                    default:
-                        res = buf_addToList(buffer, words, simple);
-                        buffer->st = GOT_SHARP;
-                        break;
-                }
-                break;
+        case SHARP:
+            switch (st) {
+                case GOT_QUOTE:
+                case GOT_BACK_QUOTE:
+                    res = buf_addSym(buffer, c, GOT_QUOTE);
+                    break;
+                case GOT_BACK_SIMPLE:
+                    res = buf_addSym(buffer, c, GOT_SIMPLE);
+                    break;
+                case GOT_SHARP:
+                    break;
+                case GOT_SPACE:
+                    buffer->st = GOT_SHARP;
+                    break;
+                case GOT_SPECIAL:
+                    res = buf_addToList(buffer, words, special);
+                    buffer->st = GOT_SHARP;
+                    break;
+                case GOT_SIMPLE:
+                default:
+                    res = buf_addToList(buffer, words, simple);
+                    buffer->st = GOT_SHARP;
+                    break;
+            }
+            break;
 
-            case QUOTE:
-                switch (st) {
-                    case GOT_BACK_QUOTE:
-                        res = buf_addSym(buffer, c, GOT_QUOTE);
-                        break;
-                    case GOT_QUOTE:
-                        buffer->st = GOT_SIMPLE;
-                        break;
-                    case GOT_SPECIAL:
-                        res = buf_addToList(buffer, words, special);
-                        buffer->st = GOT_QUOTE;
-                        break;
-                    case GOT_BACK_SIMPLE:
-                        res = buf_addSym(buffer, c, GOT_SIMPLE);
-                        break;
-                    case GOT_SHARP:
-                        break;
-                    default:
-                        buffer->st = GOT_QUOTE;
-                        break;
-                }
-                break;
+        case QUOTE:
+            switch (st) {
+                case GOT_BACK_QUOTE:
+                    res = buf_addSym(buffer, c, GOT_QUOTE);
+                    break;
+                case GOT_QUOTE:
+                    buffer->st = GOT_SIMPLE;
+                    break;
+                case GOT_SPECIAL:
+                    res = buf_addToList(buffer, words, special);
+                    buffer->st = GOT_QUOTE;
+                    break;
+                case GOT_BACK_SIMPLE:
+                    res = buf_addSym(buffer, c, GOT_SIMPLE);
+                    break;
+                case GOT_SHARP:
+                    break;
+                default:
+                    buffer->st = GOT_QUOTE;
+                    break;
+            }
+            break;
 
-            case BACKSLASH:
-                switch (st) {
-                    case GOT_BACK_SIMPLE:
-                        res = buf_addSym(buffer, c, GOT_SIMPLE);
-                        break;
-                    case GOT_SPECIAL:
-                        res = buf_addToList(buffer, words, special);
-                        buffer->st = GOT_BACK_SIMPLE;
-                        break;
-                    case GOT_SHARP:
-                        break;
-                    case GOT_SIMPLE:
-                        buffer->st = GOT_BACK_SIMPLE;
-                        break;
-                    case GOT_BACK_QUOTE:
-                        res = buf_addSym(buffer, c, GOT_QUOTE);
-                        break;
-                    case GOT_QUOTE:
-                        buffer->st = GOT_BACK_QUOTE;
-                        break;
-                    default:
-                        buffer->st = GOT_BACK_SIMPLE;
-                        break;
-                }
-                break;
-
-            case INCORRECT:
-                switch (st) {
-                    case GOT_QUOTE:
-                    case GOT_BACK_QUOTE:
-                        res = buf_addSym(buffer, c, GOT_QUOTE);
-                        break;
-                    case GOT_BACK_SIMPLE:
-                        res = buf_addSym(buffer, c, GOT_SIMPLE);
-                        break;
-                    case GOT_SHARP:
-                        break;
-                    default:
-                        res = wait_syntax;
-                        break;
-                }
-                break;
-        }
+        case BACKSLASH:
+            switch (st) {
+                case GOT_BACK_SIMPLE:
+                    res = buf_addSym(buffer, c, GOT_SIMPLE);
+                    break;
+                case GOT_SPECIAL:
+                    res = buf_addToList(buffer, words, special);
+                    buffer->st = GOT_BACK_SIMPLE;
+                    break;
+                case GOT_SHARP:
+                    break;
+                case GOT_SIMPLE:
+                    buffer->st = GOT_BACK_SIMPLE;
+                    break;
+                case GOT_BACK_QUOTE:
+                    res = buf_addSym(buffer, c, GOT_QUOTE);
+                    break;
+                case GOT_QUOTE:
+                    buffer->st = GOT_BACK_QUOTE;
+                    break;
+                default:
+                    buffer->st = GOT_BACK_SIMPLE;
+                    break;
+            }
+            break;
+    }
 
     return res;
 }

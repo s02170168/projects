@@ -17,11 +17,12 @@ void checkAndExit(err_type);
 void sigHandler(int);
 
 jmp_buf begin;
+
 int main(int argc, char **argv) {
     signal(SIGINT, sigHandler);
 
     /* Программа с аргументами */
-    if(argc - 1){
+    if (argc - 1) {
         words = ls_make();
         checkAndExit(ls_argvToWords(words, argv));
         commands = cmd_make();
@@ -68,7 +69,7 @@ int main(int argc, char **argv) {
             checkAndContinue(cmd_fill(words, commands));
             //Запуск программ
             int status = 0;
-            if(cmd_shellExec(commands, &processes, &status)){
+            if (cmd_shellExec(commands, &processes, &status)) {
                 buf_delete(buffer);
                 ls_delete(words);
                 cmd_delete(commands);
@@ -106,29 +107,19 @@ void invite() {
 }
 
 void checkAndContinue(err_type err) {
-    switch (err) {
-        case no_err:
-        case wait_syntax:
-            break;
-        default:
-            err_msg(err);
-            buf_delete(buffer);
-            ls_delete(words);
-            cmd_delete(commands);
+    if (err == no_err) { return; }
 
-            longjmp(begin, 1);
-    }
+    err_msg(err);
+    buf_delete(buffer);
+    ls_delete(words);
+    cmd_delete(commands);
+
+    longjmp(begin, 1);
 }
 
-void checkAndExit(err_type err){
-    switch (err) {
-        case no_err:
-            return;
-        case wait_syntax:
-            err_msg(syntax);
-        default:
-            err_msg(err);
-    }
+void checkAndExit(err_type err) {
+    if (err == no_err) { return; }
+    err_msg(err);
     ls_delete(words);
     buf_delete(buffer);
     cmd_delete(commands);
@@ -136,7 +127,7 @@ void checkAndExit(err_type err){
     exit(0);
 }
 
-void sigHandler(int signal){
+void sigHandler(int signal) {
     buf_delete(buffer);
     ls_delete(words);
     cmd_delete(commands);

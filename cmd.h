@@ -21,7 +21,7 @@ struct cmd {
 };
 typedef struct cmd *cmd;
 
-typedef struct prStack{
+typedef struct prStack {
     pid_t pid;
     int number;
     struct prStack *next;
