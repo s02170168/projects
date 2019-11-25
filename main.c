@@ -25,6 +25,7 @@ int main(int argc, char **argv) {
     if (argc - 1) {
         words = ls_make();
         checkAndExit(ls_argvToWords(words, argv));
+        ls_replacePathVars(words);
         commands = cmd_make();
         checkAndExit(cmd_fill(words, commands));
         int status = 0;
@@ -88,6 +89,7 @@ int main(int argc, char **argv) {
     if ((c == EOF && c_prev != '\n') || !sym_got) { putchar('\n'); }
 
     checkAndExit(buf_getSym(buffer, words, '\n', err));
+    ls_replacePathVars(words);
     checkAndExit(cmd_fill(words, commands));
     int status = 0;
     cmd_shellExec(commands, &processes, &status);
