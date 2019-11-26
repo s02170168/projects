@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 All: my_shell
 
 my_shell: main.o buf.o list.o cmd.o symbols.o error.o
@@ -24,15 +23,3 @@ error.o: error.c
 
 clean:
 	rm -rf *.o my_shell
-=======
-all: task3
-
-task3: main.o
-	gcc -o task3 main.o
-	
-main.o: main.c
-	gcc -c -std=c11 main.c
-	
-clean:
-	rm -rf *.o task3
->>>>>>> craft_table

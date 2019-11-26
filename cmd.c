@@ -126,7 +126,6 @@ cmd cmd_make() {
 
 void cmd_clear(cmd commands) {
     if (commands == NULL) { return; }
-
     command *temp = commands->commands;
     for (int i = 0; i < commands->commandsCount; ++i) {
         if (temp[i].argv != NULL) {

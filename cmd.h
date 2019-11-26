@@ -19,6 +19,7 @@ struct cmd {
     command *commands;
     int commandsCount;
 };
+
 typedef struct cmd *cmd;
 
 typedef struct prStack {

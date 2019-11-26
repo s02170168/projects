@@ -2,9 +2,9 @@
 #define ERROR_H
 
 typedef enum error {
+    no_err,
     syntax,
-    allocation,
-    no_err
+    allocation
 } err_type;
 
 void err_msg(err_type);

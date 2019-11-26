@@ -1,5 +1,4 @@
 #include "myShellHeaders.h"
-#include "error.h"
 
 void err_msg(err_type err) {
     switch (err) {
