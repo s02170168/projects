@@ -45,6 +45,8 @@ err_type cmd_fill(list words, cmd commands) {
         return syntax;
     }
 
+    if(ls_collapseConveyors(words) != no_err) { return allocation; }
+
     int words_cnt = words->count;
     for (int i = 0; i < words_cnt; ++i) {
         if (words->types[i] == simple) {
@@ -341,16 +343,11 @@ void cmd_prKill(prStack *processes) {
     }
 }
 
-prStack *cmd_pushPr(prStack *processes, pid_t pid) {
+prStack *cmd_prPush(prStack *processes, pid_t pid) {
     prStack *temp;
     temp = (prStack *) malloc(sizeof(*temp));
     temp->pid = pid;
     temp->next = processes;
-    if (processes == NULL) {
-        temp->number = 1;
-    } else {
-        temp->number = processes->number + 1;
-    }
     return temp;
 }
 
@@ -374,176 +371,173 @@ prStack *cmd_prCheck(prStack *processes) {
 int cmd_shellExec(cmd commands, prStack **processes, int *exitStatus) {
     if (commands == NULL) { return 0; }
 
-    int status;
+    int status = 0;
     int file_in, file_out;
     pid_t pid;
-    int nextCondition = 1;
     int fd[2];
     int nextIn = 0;
+    int goNext = 1;
 
     prStack *conveyor = NULL;
+    int currentProcessStatus = 1;
 
     for (int i = 0; i < commands->commandsCount; ++i) {
         command temp = commands->commands[i];
-        if (nextCondition) {
 
-            if (temp.argv != NULL && !strcmp(temp.argv[0], "exit")) {
-                *exitStatus = 0;
-                if (temp.argv[1] != NULL) {
-                    if (temp.argv[2] != NULL) {
-                        cmd_shellMessage(N_EXIT, NULL);
-                        continue;
-                    } else {
-                        *exitStatus = atoi(temp.argv[1]);
-                    }
-                }
-                return 1;
+        if(!goNext){
+            if((temp.next_type == 2 && !currentProcessStatus) ||
+                    (temp.next_type == 3 && currentProcessStatus)){
+                goNext = 1;
             }
+            if(!temp.next_type) { goNext = 1; }
+            continue;
+        }
 
-            if (temp.argv != NULL && !strcmp(temp.argv[0], "cd")) {
-                if (temp.argv[1] == NULL) {
-                    chdir(getenv("HOME"));
-                } else if (temp.argv[2] == NULL) {
-                    if (chdir(temp.argv[1]) == -1) {
-                        cmd_shellMessage(N_CD, temp.argv[1]);
-                    }
+        /* Внутренняя команда exit */
+        if (temp.argv != NULL && !strcmp(temp.argv[0], "exit")) {
+            *exitStatus = 0;
+            if (temp.argv[1] != NULL) {
+                if (temp.argv[2] != NULL) {
+                    cmd_shellMessage(N_EXIT, NULL);
+                    continue;
                 } else {
-                    cmd_shellMessage(N_CD, NULL);
+                    *exitStatus = atoi(temp.argv[1]);
+                }
+            }
+            return 1;
+        }
+
+        /* Внутренняя команда cd */
+        if (temp.argv != NULL && !strcmp(temp.argv[0], "cd")) {
+            if (temp.argv[1] == NULL) {
+                chdir(getenv("HOME"));
+            } else if (temp.argv[2] == NULL) {
+                if (chdir(temp.argv[1]) == -1) {
+                    cmd_shellMessage(N_CD, temp.argv[1]);
+                }
+            } else {
+                cmd_shellMessage(N_CD, NULL);
+            }
+            continue;
+        }
+
+        if (temp.next_type == 1) {
+            pipe(fd);
+        }
+
+        switch (pid = fork()) {
+            /* Процесс создать не удалось */
+            case -1:
+                cmd_shellMessage(N_FORK, NULL);
+                if (temp.next_type == 1) {
+                    close(fd[0]);
+                    close(fd[1]);
+                }
+                if (nextIn) {
+                    close(nextIn);
+                    nextIn = 0;
                 }
                 continue;
-            }
 
-            if (temp.next_type == 1) {
-                pipe(fd);
-            }
+            /* Процесс-сын */
+            case 0:
+                /* Перенаправление потока ввода */
+                if (nextIn) {
+                    dup2(nextIn, 0);
+                    close(nextIn);
+                    nextIn = 0;
+                }
 
-            switch (pid = fork()) {
-                case -1:
-                    cmd_shellMessage(N_FORK, NULL);
-                    if (temp.next_type == 1) {
-                        close(fd[0]);
-                        close(fd[1]);
-                    }
-                    if (nextIn) {
-                        close(nextIn);
-                        nextIn = 0;
-                    }
-                    continue;
-                case 0:
-                    /* Перенаправление потока ввода */
-                    if (nextIn) {
-                        dup2(nextIn, 0);
-                        close(nextIn);
-                        nextIn = 0;
-                    }
+                if (temp.next_type == 1) {
+                    close(fd[0]);
+                    dup2(fd[1], 1);
+                    close(fd[1]);
+                }
 
-                    if (temp.next_type == 1) {
-                        close(fd[0]);
-                        dup2(fd[1], 1);
-                        close(fd[1]);
+                if (temp.file_in != NULL) {
+                    file_in = open(temp.file_in, O_RDONLY);
+                    if (file_in == -1 || dup2(file_in, 0) == -1) {
+                        cmd_shellMessage(N_OPEN, temp.file_in);
+                        continue;
                     }
-
-                    if (temp.file_in != NULL) {
-                        file_in = open(temp.file_in, O_RDONLY);
-                        if (file_in == -1 || dup2(file_in, 0) == -1) {
-                            cmd_shellMessage(N_OPEN, temp.file_in);
-                            continue;
-                        }
-                        close(file_in);
-                    }
-                    /* Перенаправление потока вывода */
-                    if (temp.file_out != NULL) {
-                        if (temp.out_type == 1) {
-                            file_out = open(temp.file_out, O_WRONLY | O_CREAT | O_TRUNC, 0644);
-                        } else {
-                            file_out = open(temp.file_out, O_WRONLY | O_CREAT | O_APPEND, 0644);
-                        }
-                        if (file_out == -1 || dup2(file_out, 1) == -1) {
-                            cmd_shellMessage(N_OPEN, temp.file_out);
-                            continue;
-                        }
-                    }
-
-
-                    /* Запуск команды */
-                    if (temp.argv != NULL && !strcmp(temp.argv[0], "pwd")) {
-                        char pwd[PATH_MAX];
-                        getcwd(pwd, PATH_MAX);
-                        printf("%s\n", pwd);
-                        exit(0);
-                    }
-
-                    if (temp.argv != NULL) {
-                        execvp(temp.argv[0], temp.argv);
-                        cmd_shellMessage(N_EXEC, temp.argv[0]);
+                    close(file_in);
+                }
+                /* Перенаправление потока вывода */
+                if (temp.file_out != NULL) {
+                    if (temp.out_type == 1) {
+                        file_out = open(temp.file_out, O_WRONLY | O_CREAT | O_TRUNC, 0644);
                     } else {
-                        execvp(temp.sub_shell[0], temp.sub_shell);
-                        cmd_shellMessage(N_EXEC, temp.sub_shell[0]);
+                        file_out = open(temp.file_out, O_WRONLY | O_CREAT | O_APPEND, 0644);
                     }
-                    exit(1);
-                default:
-                    if (nextIn) {
-                        close(nextIn);
+                    if (file_out == -1 || dup2(file_out, 1) == -1) {
+                        cmd_shellMessage(N_OPEN, temp.file_out);
+                        continue;
                     }
-                    if (temp.next_type == 1) {
-                        close(fd[1]);
-                        nextIn = fd[0];
-                    }
+                }
 
-                    if (temp.next_type == 1) {
-                        conveyor = cmd_pushPr(conveyor, pid);
+
+                /* Внутренняя команда pwd */
+                if (temp.argv != NULL && !strcmp(temp.argv[0], "pwd")) {
+                    char pwd[PATH_MAX];
+                    getcwd(pwd, PATH_MAX);
+                    printf("%s\n", pwd);
+                    exit(0);
+                }
+
+                /* Произвольная команда */
+                if (temp.argv != NULL) {
+                    execvp(temp.argv[0], temp.argv);
+                    cmd_shellMessage(N_EXEC, temp.argv[0]);
+                } else {
+                    execvp(temp.sub_shell[0], temp.sub_shell);
+                    cmd_shellMessage(N_EXEC, temp.sub_shell[0]);
+                }
+                exit(1);
+
+            /* Родительский процесс */
+            default:
+                if (nextIn) {
+                    close(nextIn);
+                }
+                if (temp.next_type == 1) {
+                    close(fd[1]);
+                    nextIn = fd[0];
+                }
+
+                if (temp.next_type == 1) {
+                    conveyor = cmd_prPush(conveyor, pid);
+                } else {
+                    nextIn = 0;
+                    if (temp.background) {
+                        *processes = cmd_prPush(*processes, pid);
+                        prStack *pr_ptr;
+                        while (conveyor != NULL) {
+                            *processes = cmd_prPush(*processes, conveyor->pid);
+                            pr_ptr = conveyor;
+                            conveyor = conveyor->next;
+                            free(pr_ptr);
+                        }
                     } else {
-                        nextIn = 0;
-                        if (temp.background) {
-                            *processes = cmd_pushPr(*processes, pid);
-                            prStack *pr_ptr;
-                            while (conveyor != NULL) {
-                                *processes = cmd_pushPr(*processes, conveyor->pid);
-                                pr_ptr = conveyor;
-                                conveyor = conveyor->next;
-                                free(pr_ptr);
-                            }
-                        } else {
-                            waitpid(pid, &status, 0);
-                            while (conveyor != NULL) {
-                                conveyor = cmd_prCheck(conveyor);
-                            }
+                        waitpid(pid, &status, 0);
+                        while (conveyor != NULL) {
+                            conveyor = cmd_prCheck(conveyor);
                         }
                     }
+                }
 
-                    switch (temp.next_type) {
-                        case 1:
-                            break;
-                        case 2:
-                            if (WIFEXITED(status)) {
-                                nextCondition = 0;
-                            } else {
-                                nextCondition = 1;
-                            }
-                            break;
-                        case 3:
-                            if (WIFEXITED(status)) {
-                                nextCondition = 1;
-                            } else {
-                                nextCondition = 0;
-                            }
-                            break;
-                        default:
-                            break;
-                    }
-                    break;
-            }
-        } else {
-            if (temp.next_type == 0) {
-                nextCondition = 1;
-            }
+                currentProcessStatus = (WIFEXITED(status) && !WEXITSTATUS(status)) ? (1) : (0);
+
+                if((temp.next_type == 2 && currentProcessStatus) ||
+                        (temp.next_type == 3 && !currentProcessStatus)){
+                    goNext = 0;
+                }
+
+                break;
         }
     }
 
     if (nextIn) { close(nextIn); }
-    while (conveyor) {
-        conveyor = cmd_prCheck(conveyor);
-    }
+    while (conveyor) { conveyor = cmd_prCheck(conveyor); }
 
     cmd_clear(commands);
     return 0;

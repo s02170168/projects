@@ -14,5 +14,6 @@
 #include <dirent.h>
 
 #include "error.h"
+#include "symbols.h"
 
 #endif

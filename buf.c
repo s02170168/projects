@@ -1,7 +1,6 @@
 #include "myShellHeaders.h"
 #include "buf.h"
 #include "list.h"
-#include "symbols.h"
 
 buf buf_make() {
     buf temp = (buf) malloc(sizeof(*temp));

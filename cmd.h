@@ -24,7 +24,6 @@ typedef struct cmd *cmd;
 
 typedef struct prStack {
     pid_t pid;
-    int number;
     struct prStack *next;
 } prStack;
 
@@ -55,9 +54,7 @@ err_type cmd_pushSubShell(cmd, list, int *);
 
 void cmd_shellMessage(int, const char *);
 
-void cmd_prKill(prStack *);
-
-prStack *cmd_pushPr(prStack *, pid_t);
+prStack *cmd_prPush(prStack *, pid_t);
 
 
 /* Constructor & Destructor */
@@ -74,5 +71,7 @@ void cmd_printStructure(cmd);
 int cmd_shellExec(cmd, prStack **, int *);
 
 prStack *cmd_prCheck(prStack *);
+
+void cmd_prKill(prStack *);
 
 #endif

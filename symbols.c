@@ -1,4 +1,4 @@
-#include "symbols.h"
+#include "myShellHeaders.h"
 
 const char specials[SPECIAL_COUNT] = {
         '>', '|', '&',

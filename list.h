@@ -24,6 +24,8 @@ list ls_make(void);
 
 void ls_delete(list);
 
+err_type ls_addBrackets(list, int, int);
+
 
 /* Public */
 err_type ls_add(list, string, word_type);
@@ -35,5 +37,7 @@ void ls_print(list);
 void ls_replacePathVars(list);
 
 void ls_clear(list);
+
+err_type ls_collapseConveyors(list words);
 
 #endif
