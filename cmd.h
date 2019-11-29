@@ -68,7 +68,7 @@ err_type cmd_fill(list, cmd);
 
 void cmd_printStructure(cmd);
 
-int cmd_shellExec(cmd, prStack **, int *);
+int cmd_shellExec(cmd, prStack **, prStack **, int *);
 
 prStack *cmd_prCheck(prStack *);
 

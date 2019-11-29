@@ -11,8 +11,9 @@ typedef enum state {
     GOT_SPACE,
     GOT_SHARP,
     GOT_QUOTE,
+    GOT_DOUBLE_QUOTE,
     GOT_BACK_SIMPLE,
-    GOT_BACK_QUOTE
+    GOT_BACK_DOUBLE_QUOTE
 } state;
 
 struct buf {
@@ -24,6 +25,10 @@ typedef struct buf *buf;
 
 void buf_clear(buf, state);
 
+err_type buf_addSym(buf, char, state);
+
+err_type buf_addToList(buf, list, word_type);
+
 
 /* Constructor & Destructor */
 buf buf_make(void);
@@ -32,10 +37,6 @@ void buf_delete(buf);
 
 
 /* Public */
-err_type buf_addSym(buf, char, state);
-
-err_type buf_addToList(buf, list, word_type);
-
 err_type buf_getSym(buf, list, char, err_type);
 
 #endif

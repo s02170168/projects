@@ -21,8 +21,11 @@ int sym_type(char c) {
     if (c == '#') {
         return SHARP;
     }
-    if (c == '"') {
+    if (c == '\'') {
         return QUOTE;
+    }
+    if (c == '"'){
+        return DOUBLE_QUOTE;
     }
     if (c == '\\') {
         return BACKSLASH;

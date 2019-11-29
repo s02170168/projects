@@ -8,6 +8,7 @@ enum {
     SPECIAL = 4,
     SHARP = 5,
     QUOTE = 6,
+    DOUBLE_QUOTE = 7,
     BACKSLASH = 0,
     SPECIAL_COUNT = 7
 };

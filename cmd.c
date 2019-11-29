@@ -39,19 +39,20 @@ int cmd_checkBrackets(list words) {
 }
 
 err_type cmd_fill(list words, cmd commands) {
+    err_type res = no_err;
     if (!words->count) { return no_err; }
     if (cmd_checkBrackets(words)) { return syntax; }
     if (words->types[0] == special && cmd_getType(words->words[0]) != open_bracket) {
         return syntax;
     }
 
-    if(ls_collapseConveyors(words) != no_err) { return allocation; }
+    if((res = ls_collapseConveyors(words)) != no_err) { return res; }
 
     int words_cnt = words->count;
     for (int i = 0; i < words_cnt; ++i) {
         if (words->types[i] == simple) {
-            if (cmd_addCommand(commands) != no_err) { return allocation; }
-            if (cmd_pushArgv(commands, words, &i) != no_err) { return allocation; }
+            if ((res = cmd_addCommand(commands)) != no_err) { return res; }
+            if ((res = cmd_pushArgv(commands, words, &i)) != no_err) { return res; }
         } else {
 
             cmd_type type = cmd_getType(words->words[i]);
@@ -61,8 +62,8 @@ err_type cmd_fill(list words, cmd commands) {
 
             switch (type) {
                 case open_bracket:
-                    if (cmd_addCommand(commands) != no_err) { return allocation; }
-                    if (cmd_pushSubShell(commands, words, &i) != no_err) { return allocation; }
+                    if ((res = cmd_addCommand(commands)) != no_err) { return res; }
+                    if ((res = cmd_pushSubShell(commands, words, &i)) != no_err) { return res; }
                     break;
                 case next:
                     temp[cur].next_type = 0;
@@ -202,6 +203,9 @@ err_type cmd_pushArgv(cmd commands, list words, int *idx) {
     while (i < words->count && words->types[i] == simple) {
         ++i;
         ++count;
+    }
+    if(i < words->count && cmd_getType(words->words[i]) == open_bracket) {
+        return syntax;
     }
 
     char **argv = (char **) malloc((count + 1) * sizeof(*argv));
@@ -368,7 +372,7 @@ prStack *cmd_prCheck(prStack *processes) {
     }
 }
 
-int cmd_shellExec(cmd commands, prStack **processes, int *exitStatus) {
+int cmd_shellExec(cmd commands, prStack **processes, prStack **conveyor, int *exitStatus) {
     if (commands == NULL) { return 0; }
 
     int status = 0;
@@ -378,7 +382,6 @@ int cmd_shellExec(cmd commands, prStack **processes, int *exitStatus) {
     int nextIn = 0;
     int goNext = 1;
 
-    prStack *conveyor = NULL;
     int currentProcessStatus = 1;
 
     for (int i = 0; i < commands->commandsCount; ++i) {
@@ -505,22 +508,22 @@ int cmd_shellExec(cmd commands, prStack **processes, int *exitStatus) {
                 }
 
                 if (temp.next_type == 1) {
-                    conveyor = cmd_prPush(conveyor, pid);
+                    *conveyor = cmd_prPush(*conveyor, pid);
                 } else {
                     nextIn = 0;
                     if (temp.background) {
                         *processes = cmd_prPush(*processes, pid);
                         prStack *pr_ptr;
-                        while (conveyor != NULL) {
-                            *processes = cmd_prPush(*processes, conveyor->pid);
-                            pr_ptr = conveyor;
-                            conveyor = conveyor->next;
+                        while (*conveyor != NULL) {
+                            *processes = cmd_prPush(*processes, (*conveyor)->pid);
+                            pr_ptr = *conveyor;
+                            *conveyor = (*conveyor)->next;
                             free(pr_ptr);
                         }
                     } else {
                         waitpid(pid, &status, 0);
-                        while (conveyor != NULL) {
-                            conveyor = cmd_prCheck(conveyor);
+                        while (*conveyor != NULL) {
+                            *conveyor = cmd_prCheck(*conveyor);
                         }
                     }
                 }
@@ -537,7 +540,7 @@ int cmd_shellExec(cmd commands, prStack **processes, int *exitStatus) {
     }
 
     if (nextIn) { close(nextIn); }
-    while (conveyor) { conveyor = cmd_prCheck(conveyor); }
+    while (*conveyor) { *conveyor = cmd_prCheck(*conveyor); }
 
     cmd_clear(commands);
     return 0;

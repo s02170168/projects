@@ -7,6 +7,7 @@ buf buffer = NULL;
 list words = NULL;
 cmd commands = NULL;
 prStack *processes = NULL;
+prStack *conveyor = NULL;
 
 void invite(void);
 
@@ -20,7 +21,6 @@ jmp_buf begin;
 
 int main(int argc, char **argv) {
     signal(SIGINT, sigHandler);
-
     /* Программа с аргументами */
     if (argc - 1) {
         words = ls_make();
@@ -28,7 +28,7 @@ int main(int argc, char **argv) {
         commands = cmd_make();
         checkAndExit(cmd_fill(words, commands));
         int status = 0;
-        cmd_shellExec(commands, &processes, &status);
+        cmd_shellExec(commands, &processes, &conveyor, &status);
 
         ls_delete(words);
         cmd_delete(commands);
@@ -69,7 +69,7 @@ int main(int argc, char **argv) {
             checkAndContinue(cmd_fill(words, commands));
             //Запуск программ
             int status = 0;
-            if (cmd_shellExec(commands, &processes, &status)) {
+            if (cmd_shellExec(commands, &processes, &conveyor, &status)) {
                 buf_delete(buffer);
                 ls_delete(words);
                 cmd_delete(commands);
@@ -84,13 +84,12 @@ int main(int argc, char **argv) {
         }
     }
 
-
     if ((c == EOF && c_prev != '\n') || !sym_got) { putchar('\n'); }
 
     checkAndExit(buf_getSym(buffer, words, '\n', err));
     checkAndExit(cmd_fill(words, commands));
     int status = 0;
-    cmd_shellExec(commands, &processes, &status);
+    cmd_shellExec(commands, &processes, &conveyor, &status);
 
 
     buf_delete(buffer);
@@ -124,13 +123,18 @@ void checkAndExit(err_type err) {
     buf_delete(buffer);
     cmd_delete(commands);
     cmd_prKill(processes);
+    cmd_prKill(conveyor);
     exit(0);
 }
 
+/* Обработчик сигнала SIGINT */
+/* При получении сигнала процесс освобождает всю выделенную память */
+/* и завершается */
 void sigHandler(int signal) {
     buf_delete(buffer);
     ls_delete(words);
     cmd_delete(commands);
     cmd_prKill(processes);
+    cmd_prKill(conveyor);
     exit(1);
 }

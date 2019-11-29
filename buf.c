@@ -79,15 +79,18 @@ err_type buf_getSym(buf buffer, list words, char c, err_type err) {
         case SIMPLE:
             switch (st) {
                 case GOT_SPECIAL:
-                    res = buf_addToList(buffer, words, special);
-                    if (res != no_err) {
-                        return res;
-                    }
+                    if((res = buf_addToList(buffer, words, special)) != no_err) { return res; }
                     res = buf_addSym(buffer, c, GOT_SIMPLE);
                     break;
                 case GOT_QUOTE:
-                case GOT_BACK_QUOTE:
                     res = buf_addSym(buffer, c, GOT_QUOTE);
+                    break;
+                case GOT_DOUBLE_QUOTE:
+                    res = buf_addSym(buffer, c, GOT_DOUBLE_QUOTE);
+                    break;
+                case GOT_BACK_DOUBLE_QUOTE:
+                    if((res = buf_addSym(buffer, '\\', GOT_BACK_DOUBLE_QUOTE)) != no_err) { return res; }
+                    res = buf_addSym(buffer, c, GOT_DOUBLE_QUOTE);
                     break;
                 case GOT_SHARP:
                     break;
@@ -100,10 +103,7 @@ err_type buf_getSym(buf buffer, list words, char c, err_type err) {
         case SPECIAL:
             switch (st) {
                 case GOT_SIMPLE:
-                    res = buf_addToList(buffer, words, simple);
-                    if (res != no_err) {
-                        return res;
-                    }
+                    if((res = buf_addToList(buffer, words, simple)) != no_err) { return res; }
                     res = buf_addSym(buffer, c, GOT_SPECIAL);
                     break;
                 case GOT_SPACE:
@@ -113,26 +113,25 @@ err_type buf_getSym(buf buffer, list words, char c, err_type err) {
                     break;
                 case GOT_SPECIAL:
                     if (sym_dup(c, buffer->word[0])) {
-                        res = buf_addSym(buffer, c, GOT_SPECIAL);
-                        if (res != no_err) {
-                            return res;
-                        }
+                        if((res = buf_addSym(buffer, c, GOT_SPECIAL)) != no_err) { return res; }
                         res = buf_addToList(buffer, words, special);
                     } else {
-                        res = buf_addToList(buffer, words, special);
-                        if (res != no_err) {
-                            return res;
-                        }
+                        if((res = buf_addToList(buffer, words, special)) != no_err) { return res; }
                         res = buf_addSym(buffer, c, GOT_SPECIAL);
                     }
                     break;
                 case GOT_BACK_SIMPLE:
                     res = buf_addSym(buffer, c, GOT_SIMPLE);
                     break;
-                case GOT_BACK_QUOTE:
+                case GOT_BACK_DOUBLE_QUOTE:
+                    if((res = buf_addSym(buffer, '\\', GOT_BACK_DOUBLE_QUOTE)) != no_err) { return res; }
+                    res = buf_addSym(buffer, c, GOT_DOUBLE_QUOTE);
+                    break;
                 case GOT_QUOTE:
-                default:
                     res = buf_addSym(buffer, c, GOT_QUOTE);
+                    break;
+                default:
+                    res = buf_addSym(buffer, c, GOT_DOUBLE_QUOTE);
                     break;
             }
             break;
@@ -140,8 +139,14 @@ err_type buf_getSym(buf buffer, list words, char c, err_type err) {
         case SPACE:
             switch (st) {
                 case GOT_QUOTE:
-                case GOT_BACK_QUOTE:
                     res = buf_addSym(buffer, c, GOT_QUOTE);
+                    break;
+                case GOT_DOUBLE_QUOTE:
+                    res = buf_addSym(buffer, c, GOT_DOUBLE_QUOTE);
+                    break;
+                case GOT_BACK_DOUBLE_QUOTE:
+                    if((res = buf_addSym(buffer, '\\', GOT_BACK_DOUBLE_QUOTE)) != no_err) { return res; }
+                    res = buf_addSym(buffer, c, GOT_DOUBLE_QUOTE);
                     break;
                 case GOT_BACK_SIMPLE:
                 case GOT_SIMPLE:
@@ -159,7 +164,8 @@ err_type buf_getSym(buf buffer, list words, char c, err_type err) {
                     res = buf_addToList(buffer, words, simple);
                     break;
                 case GOT_QUOTE:
-                case GOT_BACK_QUOTE:
+                case GOT_DOUBLE_QUOTE:
+                case GOT_BACK_DOUBLE_QUOTE:
                     res = syntax;
                     break;
                 case GOT_SPECIAL:
@@ -174,8 +180,14 @@ err_type buf_getSym(buf buffer, list words, char c, err_type err) {
         case SHARP:
             switch (st) {
                 case GOT_QUOTE:
-                case GOT_BACK_QUOTE:
                     res = buf_addSym(buffer, c, GOT_QUOTE);
+                    break;
+                case GOT_DOUBLE_QUOTE:
+                    res = buf_addSym(buffer, c, GOT_DOUBLE_QUOTE);
+                    break;
+                case GOT_BACK_DOUBLE_QUOTE:
+                    if((res = buf_addSym(buffer, '\\', GOT_BACK_DOUBLE_QUOTE)) != no_err) { return res; }
+                    res = buf_addSym(buffer, c, GOT_DOUBLE_QUOTE);
                     break;
                 case GOT_BACK_SIMPLE:
                     res = buf_addSym(buffer, c, GOT_SIMPLE);
@@ -199,11 +211,15 @@ err_type buf_getSym(buf buffer, list words, char c, err_type err) {
 
         case QUOTE:
             switch (st) {
-                case GOT_BACK_QUOTE:
-                    res = buf_addSym(buffer, c, GOT_QUOTE);
-                    break;
                 case GOT_QUOTE:
                     buffer->st = GOT_SIMPLE;
+                    break;
+                case GOT_DOUBLE_QUOTE:
+                    res = buf_addSym(buffer, c, GOT_DOUBLE_QUOTE);
+                    break;
+                case GOT_BACK_DOUBLE_QUOTE:
+                    if((res = buf_addSym(buffer, '\\', GOT_BACK_DOUBLE_QUOTE)) != no_err) { return res; }
+                    res = buf_addSym(buffer, c, GOT_DOUBLE_QUOTE);
                     break;
                 case GOT_SPECIAL:
                     res = buf_addToList(buffer, words, special);
@@ -216,6 +232,32 @@ err_type buf_getSym(buf buffer, list words, char c, err_type err) {
                     break;
                 default:
                     buffer->st = GOT_QUOTE;
+                    break;
+            }
+            break;
+
+        case DOUBLE_QUOTE:
+            switch (st) {
+                case GOT_QUOTE:
+                    res = buf_addSym(buffer, c, GOT_QUOTE);
+                    break;
+                case GOT_DOUBLE_QUOTE:
+                    buffer->st = GOT_SIMPLE;
+                    break;
+                case GOT_BACK_DOUBLE_QUOTE:
+                    res = buf_addSym(buffer, c, GOT_DOUBLE_QUOTE);
+                    break;
+                case GOT_SPECIAL:
+                    res = buf_addToList(buffer, words, special);
+                    buffer->st = GOT_DOUBLE_QUOTE;
+                    break;
+                case GOT_BACK_SIMPLE:
+                    res = buf_addSym(buffer, c, GOT_SIMPLE);
+                    break;
+                case GOT_SHARP:
+                    break;
+                default:
+                    buffer->st = GOT_DOUBLE_QUOTE;
                     break;
             }
             break;
@@ -234,11 +276,14 @@ err_type buf_getSym(buf buffer, list words, char c, err_type err) {
                 case GOT_SIMPLE:
                     buffer->st = GOT_BACK_SIMPLE;
                     break;
-                case GOT_BACK_QUOTE:
+                case GOT_QUOTE:
                     res = buf_addSym(buffer, c, GOT_QUOTE);
                     break;
-                case GOT_QUOTE:
-                    buffer->st = GOT_BACK_QUOTE;
+                case GOT_DOUBLE_QUOTE:
+                    buffer->st = GOT_BACK_DOUBLE_QUOTE;
+                    break;
+                case GOT_BACK_DOUBLE_QUOTE:
+                    res = buf_addSym(buffer, c, GOT_DOUBLE_QUOTE);
                     break;
                 default:
                     buffer->st = GOT_BACK_SIMPLE;
