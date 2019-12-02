@@ -27,8 +27,8 @@ int main(int argc, char **argv) {
         checkAndExit(ls_argvToWords(words, argv));
         commands = cmd_make();
         checkAndExit(cmd_fill(words, commands));
-        int status = 0;
-        cmd_shellExec(commands, &processes, &conveyor, &status);
+        int exitStatus = 0;
+        int status = cmd_shellExec(commands, &processes, &conveyor, &exitStatus);
 
         ls_delete(words);
         cmd_delete(commands);
@@ -41,6 +41,9 @@ int main(int argc, char **argv) {
     buffer = buf_make();
     words = ls_make();
     commands = cmd_make();
+
+    int status = 0;
+    int exitStatus = 0;
 
     if (buffer == NULL || words == NULL || commands == NULL) {
         err_msg(allocation);
@@ -68,8 +71,8 @@ int main(int argc, char **argv) {
             //Этап разбиения на команды
             checkAndContinue(cmd_fill(words, commands));
             //Запуск программ
-            int status = 0;
-            if (cmd_shellExec(commands, &processes, &conveyor, &status)) {
+            status = cmd_shellExec(commands, &processes, &conveyor, &exitStatus);
+            if(exitStatus){
                 buf_delete(buffer);
                 ls_delete(words);
                 cmd_delete(commands);
@@ -88,9 +91,7 @@ int main(int argc, char **argv) {
 
     checkAndExit(buf_getSym(buffer, words, '\n', err));
     checkAndExit(cmd_fill(words, commands));
-    int status = 0;
-    cmd_shellExec(commands, &processes, &conveyor, &status);
-
+    status = cmd_shellExec(commands, &processes, &conveyor, &exitStatus);
 
     buf_delete(buffer);
     ls_delete(words);

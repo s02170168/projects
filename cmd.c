@@ -46,7 +46,7 @@ err_type cmd_fill(list words, cmd commands) {
         return syntax;
     }
 
-    if((res = ls_collapseConveyors(words)) != no_err) { return res; }
+    if ((res = ls_collapseConveyors(words)) != no_err) { return res; }
 
     int words_cnt = words->count;
     for (int i = 0; i < words_cnt; ++i) {
@@ -204,7 +204,7 @@ err_type cmd_pushArgv(cmd commands, list words, int *idx) {
         ++i;
         ++count;
     }
-    if(i < words->count && cmd_getType(words->words[i]) == open_bracket) {
+    if (i < words->count && cmd_getType(words->words[i]) == open_bracket) {
         return syntax;
     }
 
@@ -375,51 +375,69 @@ prStack *cmd_prCheck(prStack *processes) {
 int cmd_shellExec(cmd commands, prStack **processes, prStack **conveyor, int *exitStatus) {
     if (commands == NULL) { return 0; }
 
-    int status = 0;
-    int file_in, file_out;
-    pid_t pid;
-    int fd[2];
-    int nextIn = 0;
-    int goNext = 1;
+    int status = 0; /* Код, который вернёт shell */
+    int file_in, file_out; /* Дескрипторы файлов для ввода и вывода */
+    pid_t pid; /* Идентификатор текущего процесса */
 
-    int currentProcessStatus = 1;
+    int fd[2]; /* Переменные для создания каналов */
+    int nextIn = 0;
+
+    int goNext = 1; /* Переменная для обработки логики конвейеров */
+
+    int currentProcessStatus = 0; /* Код, который вернёт текущий процесс */
 
     for (int i = 0; i < commands->commandsCount; ++i) {
         command temp = commands->commands[i];
 
-        if(!goNext){
-            if((temp.next_type == 2 && !currentProcessStatus) ||
-                    (temp.next_type == 3 && currentProcessStatus)){
-                goNext = 1;
+        /* Обработка логических операторов || и && */
+        if(i) {
+            switch (commands->commands[i - 1].next_type) {
+                case 1:
+                    if(!goNext) { continue; }
+                    break;
+                case 2:
+                    if (!currentProcessStatus) { goNext = 0; continue; }
+                    goNext = 1;
+                    break;
+                case 3:
+                    if (currentProcessStatus) { goNext = 0; continue; }
+                    goNext = 1;
+                    break;
+                default:
+                    goNext = 1;
+                    currentProcessStatus = 0;
+                    break;
             }
-            if(!temp.next_type) { goNext = 1; }
-            continue;
         }
 
         /* Внутренняя команда exit */
         if (temp.argv != NULL && !strcmp(temp.argv[0], "exit")) {
-            *exitStatus = 0;
             if (temp.argv[1] != NULL) {
                 if (temp.argv[2] != NULL) {
                     cmd_shellMessage(N_EXIT, NULL);
+                    currentProcessStatus = 1;
                     continue;
                 } else {
-                    *exitStatus = atoi(temp.argv[1]);
+                    status = atoi(temp.argv[1]);
                 }
             }
-            return 1;
+            *exitStatus = 1;
+            return status;
         }
 
         /* Внутренняя команда cd */
         if (temp.argv != NULL && !strcmp(temp.argv[0], "cd")) {
             if (temp.argv[1] == NULL) {
                 chdir(getenv("HOME"));
+                currentProcessStatus = 0;
             } else if (temp.argv[2] == NULL) {
                 if (chdir(temp.argv[1]) == -1) {
                     cmd_shellMessage(N_CD, temp.argv[1]);
+                    currentProcessStatus = 1;
                 }
             } else {
                 cmd_shellMessage(N_CD, NULL);
+                currentProcessStatus = 1;
             }
             continue;
         }
@@ -509,6 +527,7 @@ int cmd_shellExec(cmd commands, prStack **processes, prStack **conveyor, int *ex
 
                 if (temp.next_type == 1) {
                     *conveyor = cmd_prPush(*conveyor, pid);
+                    continue;
                 } else {
                     nextIn = 0;
                     if (temp.background) {
@@ -520,6 +539,8 @@ int cmd_shellExec(cmd commands, prStack **processes, prStack **conveyor, int *ex
                             *conveyor = (*conveyor)->next;
                             free(pr_ptr);
                         }
+                        currentProcessStatus = 0;
+                        continue;
                     } else {
                         waitpid(pid, &status, 0);
                         while (*conveyor != NULL) {
@@ -528,12 +549,8 @@ int cmd_shellExec(cmd commands, prStack **processes, prStack **conveyor, int *ex
                     }
                 }
 
-                currentProcessStatus = (WIFEXITED(status) && !WEXITSTATUS(status)) ? (1) : (0);
-
-                if((temp.next_type == 2 && currentProcessStatus) ||
-                        (temp.next_type == 3 && !currentProcessStatus)){
-                    goNext = 0;
-                }
+                /* Сохраняем код завершения процесса */
+                currentProcessStatus = (WIFEXITED(status)) ? (WEXITSTATUS(status)) : (1);
 
                 break;
         }
@@ -541,7 +558,7 @@ int cmd_shellExec(cmd commands, prStack **processes, prStack **conveyor, int *ex
 
     if (nextIn) { close(nextIn); }
     while (*conveyor) { *conveyor = cmd_prCheck(*conveyor); }
-
+    status = currentProcessStatus;
     cmd_clear(commands);
-    return 0;
+    return status;
 }

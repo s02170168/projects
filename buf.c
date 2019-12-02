@@ -79,7 +79,7 @@ err_type buf_getSym(buf buffer, list words, char c, err_type err) {
         case SIMPLE:
             switch (st) {
                 case GOT_SPECIAL:
-                    if((res = buf_addToList(buffer, words, special)) != no_err) { return res; }
+                    if ((res = buf_addToList(buffer, words, special)) != no_err) { return res; }
                     res = buf_addSym(buffer, c, GOT_SIMPLE);
                     break;
                 case GOT_QUOTE:
@@ -89,7 +89,7 @@ err_type buf_getSym(buf buffer, list words, char c, err_type err) {
                     res = buf_addSym(buffer, c, GOT_DOUBLE_QUOTE);
                     break;
                 case GOT_BACK_DOUBLE_QUOTE:
-                    if((res = buf_addSym(buffer, '\\', GOT_BACK_DOUBLE_QUOTE)) != no_err) { return res; }
+                    if ((res = buf_addSym(buffer, '\\', GOT_BACK_DOUBLE_QUOTE)) != no_err) { return res; }
                     res = buf_addSym(buffer, c, GOT_DOUBLE_QUOTE);
                     break;
                 case GOT_SHARP:
@@ -103,7 +103,7 @@ err_type buf_getSym(buf buffer, list words, char c, err_type err) {
         case SPECIAL:
             switch (st) {
                 case GOT_SIMPLE:
-                    if((res = buf_addToList(buffer, words, simple)) != no_err) { return res; }
+                    if ((res = buf_addToList(buffer, words, simple)) != no_err) { return res; }
                     res = buf_addSym(buffer, c, GOT_SPECIAL);
                     break;
                 case GOT_SPACE:
@@ -113,10 +113,10 @@ err_type buf_getSym(buf buffer, list words, char c, err_type err) {
                     break;
                 case GOT_SPECIAL:
                     if (sym_dup(c, buffer->word[0])) {
-                        if((res = buf_addSym(buffer, c, GOT_SPECIAL)) != no_err) { return res; }
+                        if ((res = buf_addSym(buffer, c, GOT_SPECIAL)) != no_err) { return res; }
                         res = buf_addToList(buffer, words, special);
                     } else {
-                        if((res = buf_addToList(buffer, words, special)) != no_err) { return res; }
+                        if ((res = buf_addToList(buffer, words, special)) != no_err) { return res; }
                         res = buf_addSym(buffer, c, GOT_SPECIAL);
                     }
                     break;
@@ -124,7 +124,7 @@ err_type buf_getSym(buf buffer, list words, char c, err_type err) {
                     res = buf_addSym(buffer, c, GOT_SIMPLE);
                     break;
                 case GOT_BACK_DOUBLE_QUOTE:
-                    if((res = buf_addSym(buffer, '\\', GOT_BACK_DOUBLE_QUOTE)) != no_err) { return res; }
+                    if ((res = buf_addSym(buffer, '\\', GOT_BACK_DOUBLE_QUOTE)) != no_err) { return res; }
                     res = buf_addSym(buffer, c, GOT_DOUBLE_QUOTE);
                     break;
                 case GOT_QUOTE:
@@ -145,7 +145,7 @@ err_type buf_getSym(buf buffer, list words, char c, err_type err) {
                     res = buf_addSym(buffer, c, GOT_DOUBLE_QUOTE);
                     break;
                 case GOT_BACK_DOUBLE_QUOTE:
-                    if((res = buf_addSym(buffer, '\\', GOT_BACK_DOUBLE_QUOTE)) != no_err) { return res; }
+                    if ((res = buf_addSym(buffer, '\\', GOT_BACK_DOUBLE_QUOTE)) != no_err) { return res; }
                     res = buf_addSym(buffer, c, GOT_DOUBLE_QUOTE);
                     break;
                 case GOT_BACK_SIMPLE:
@@ -186,7 +186,7 @@ err_type buf_getSym(buf buffer, list words, char c, err_type err) {
                     res = buf_addSym(buffer, c, GOT_DOUBLE_QUOTE);
                     break;
                 case GOT_BACK_DOUBLE_QUOTE:
-                    if((res = buf_addSym(buffer, '\\', GOT_BACK_DOUBLE_QUOTE)) != no_err) { return res; }
+                    if ((res = buf_addSym(buffer, '\\', GOT_BACK_DOUBLE_QUOTE)) != no_err) { return res; }
                     res = buf_addSym(buffer, c, GOT_DOUBLE_QUOTE);
                     break;
                 case GOT_BACK_SIMPLE:
@@ -218,7 +218,7 @@ err_type buf_getSym(buf buffer, list words, char c, err_type err) {
                     res = buf_addSym(buffer, c, GOT_DOUBLE_QUOTE);
                     break;
                 case GOT_BACK_DOUBLE_QUOTE:
-                    if((res = buf_addSym(buffer, '\\', GOT_BACK_DOUBLE_QUOTE)) != no_err) { return res; }
+                    if ((res = buf_addSym(buffer, '\\', GOT_BACK_DOUBLE_QUOTE)) != no_err) { return res; }
                     res = buf_addSym(buffer, c, GOT_DOUBLE_QUOTE);
                     break;
                 case GOT_SPECIAL:

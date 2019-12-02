@@ -24,7 +24,7 @@ int sym_type(char c) {
     if (c == '\'') {
         return QUOTE;
     }
-    if (c == '"'){
+    if (c == '"') {
         return DOUBLE_QUOTE;
     }
     if (c == '\\') {

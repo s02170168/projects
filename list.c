@@ -210,28 +210,28 @@ err_type ls_argvToWords(list words, char **argv) {
     return res;
 }
 
-err_type ls_addBrackets(list words, int idx_open, int idx_close){
-    
+err_type ls_addBrackets(list words, int idx_open, int idx_close) {
+
     string open_bracket = (string) malloc(2 * sizeof(*open_bracket));
-    if(open_bracket == NULL) { return allocation; }
+    if (open_bracket == NULL) { return allocation; }
     string close_bracket = (string) malloc(2 * sizeof(*close_bracket));
-    if(close_bracket == NULL){
+    if (close_bracket == NULL) {
         free(open_bracket);
         return allocation;
     }
     open_bracket[0] = '(', open_bracket[1] = 0;
     close_bracket[0] = ')', close_bracket[1] = 0;
-    
+
     string *w_ptr = words->words;
     w_ptr = (string *) realloc(w_ptr, (words->count + 2) * sizeof(*w_ptr));
-    if(w_ptr == NULL){
+    if (w_ptr == NULL) {
         free(open_bracket);
         free(close_bracket);
         return allocation;
     }
     word_type *t_ptr = words->types;
     t_ptr = (word_type *) realloc(t_ptr, (words->count + 2) * sizeof(*t_ptr));
-    if(t_ptr == NULL){
+    if (t_ptr == NULL) {
         free(open_bracket);
         free(close_bracket);
         free(w_ptr);
@@ -256,11 +256,11 @@ err_type ls_addBrackets(list words, int idx_open, int idx_close){
     words->count += 2;
     words->words = w_ptr;
     words->types = t_ptr;
-    
+
     return no_err;
 }
 
-err_type ls_collapseConveyors(list words){
+err_type ls_collapseConveyors(list words) {
     int start, end;
     int conveyorLength;
     err_type res;
@@ -269,25 +269,25 @@ err_type ls_collapseConveyors(list words){
         start = end = i;
         conveyorLength = 1;
         string temp = words->words[end];
-        while (end < words->count && !(words->types[end] == special && (!strcmp(temp, ";") || !strcmp(temp, "&")))){
-            if(!strcmp(temp, "||") || !strcmp(temp, "&&") || !strcmp(temp, "|")){
+        while (end < words->count && !(words->types[end] == special && (!strcmp(temp, ";") || !strcmp(temp, "&")))) {
+            if (!strcmp(temp, "||") || !strcmp(temp, "&&") || !strcmp(temp, "|")) {
                 ++conveyorLength;
             }
             ++end;
-            if(end < words->count){
+            if (end < words->count) {
                 temp = words->words[end];
             }
         }
-        if(end == words->count) { return no_err; }
-        if(!strcmp(temp, ";")){
+        if (end == words->count) { return no_err; }
+        if (!strcmp(temp, ";")) {
             i = end;
             continue;
         }
-        if(!strcmp(temp, "&")){
+        if (!strcmp(temp, "&")) {
             i = end;
-            if(conveyorLength - 1){
+            if (conveyorLength - 1) {
                 res = ls_addBrackets(words, start, end);
-                if(res != no_err) { return res; }
+                if (res != no_err) { return res; }
                 i += 2;
             }
         }
