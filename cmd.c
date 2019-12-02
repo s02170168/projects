@@ -39,7 +39,7 @@ int cmd_checkBrackets(list words) {
 }
 
 err_type cmd_fill(list words, cmd commands) {
-    err_type res = no_err;
+    err_type res;
     if (!words->count) { return no_err; }
     if (cmd_checkBrackets(words)) { return syntax; }
     if (words->types[0] == special && cmd_getType(words->words[0]) != open_bracket) {

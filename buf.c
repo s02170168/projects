@@ -152,6 +152,9 @@ err_type buf_getSym(buf buffer, list words, char c, err_type err) {
                 case GOT_SIMPLE:
                     res = buf_addToList(buffer, words, simple);
                     break;
+                case GOT_SPECIAL:
+                    res = buf_addToList(buffer, words, special);
+                    break;
                 default:
                     break;
             }
