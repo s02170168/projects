@@ -55,4 +55,4 @@
 
 ## Тест Markdown
 
-item **bold red**{style="color:red"}
+<p style="color:#7c8aff">Привет </p>
