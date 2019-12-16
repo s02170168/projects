@@ -52,3 +52,7 @@
 >Включены все необходимые стандартные библиотеки для работы с процессами,
 >а также error.h и symbols.h.
 * Makefile
+
+## Тест Markdown
+
+item **bold red**{style="color:red"}
