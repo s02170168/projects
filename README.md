@@ -55,4 +55,24 @@
 
 ## Тест Markdown
 
-<p style="color:#7c8aff">Привет </p>
+```c
+int main(void){
+    printf("Hello, world!\n");
+}
+```
+
+```asm
+CMAIN:
+    mov ebp, esp
+    push ebp
+
+    mov eax, 1
+.cycle:
+    mov ebx, 2
+    mul ebx
+    jnc .cycle
+
+    pop ebp
+    mov esp, ebp
+    ret
+```
